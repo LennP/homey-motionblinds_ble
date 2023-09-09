@@ -1,0 +1,265 @@
+{
+  "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
+  "id": "com.coulisse.motionblindsble",
+  "version": "1.0.0",
+  "compatibility": ">=5.0.0",
+  "sdk": 3,
+  "platforms": [
+    "local",
+    "cloud"
+  ],
+  "name": {
+    "en": "MotionBlinds BLE"
+  },
+  "description": {
+    "en": "MotionBlinds BLE"
+  },
+  "category": [
+    "climate"
+  ],
+  "permissions": [
+    "homey:wireless:ble",
+    "homey:manager:ledring"
+  ],
+  "images": {
+    "small": "/assets/images/small.png",
+    "large": "/assets/images/large.png",
+    "xlarge": "/assets/images/xlarge.png"
+  },
+  "author": {
+    "name": "Lenn Perik",
+    "email": "lennperik@hotmail.nl"
+  },
+  "drivers": [
+    {
+      "name": {
+        "en": "CurtainBlind"
+      },
+      "class": "blinds",
+      "capabilities": [
+        "windowcoverings_set",
+        "windowcoverings_state",
+        "battery"
+      ],
+      "platforms": [
+        "local",
+        "cloud"
+      ],
+      "connectivity": [
+        "ble"
+      ],
+      "images": {
+        "small": "/drivers/curtainblind/assets/images/small.png",
+        "large": "/drivers/curtainblind/assets/images/large.png",
+        "xlarge": "/drivers/curtainblind/assets/images/xlarge.png"
+      },
+      "pair": [
+        {
+          "id": "pincode",
+          "template": "pincode",
+          "options": {
+            "title": "Enter the motor MAC code",
+            "hint": "For example: F30D or A1F5",
+            "type": "text",
+            "length": 4
+          }
+        },
+        {
+          "id": "loading",
+          "template": "loading"
+        },
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          },
+          "options": {
+            "singular": true
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
+      "id": "curtainblind"
+    },
+    {
+      "name": {
+        "en": "DoubleRollerBlind"
+      },
+      "class": "blinds",
+      "capabilities": [
+        "windowcoverings_set",
+        "windowcoverings_state",
+        "battery"
+      ],
+      "platforms": [
+        "local",
+        "cloud"
+      ],
+      "connectivity": [
+        "ble"
+      ],
+      "images": {
+        "small": "/drivers/doublerollerblind/assets/images/small.png",
+        "large": "/drivers/doublerollerblind/assets/images/large.png",
+        "xlarge": "/drivers/doublerollerblind/assets/images/xlarge.png"
+      },
+      "pair": [
+        {
+          "id": "pincode",
+          "template": "pincode",
+          "options": {
+            "title": "Enter the motor MAC code",
+            "hint": "For example: F30D or A1F5",
+            "type": "text",
+            "length": 4
+          }
+        },
+        {
+          "id": "loading",
+          "template": "loading"
+        },
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          },
+          "options": {
+            "singular": true
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
+      "id": "doublerollerblind"
+    },
+    {
+      "name": {
+        "en": "RollerBlind"
+      },
+      "class": "blinds",
+      "capabilities": [
+        "windowcoverings_set",
+        "windowcoverings_state",
+        "battery"
+      ],
+      "platforms": [
+        "local",
+        "cloud"
+      ],
+      "connectivity": [
+        "ble"
+      ],
+      "images": {
+        "small": "/drivers/rollerblind/assets/images/small.png",
+        "large": "/drivers/rollerblind/assets/images/large.png",
+        "xlarge": "/drivers/rollerblind/assets/images/xlarge.png"
+      },
+      "pair": [
+        {
+          "id": "pincode",
+          "template": "pincode",
+          "options": {
+            "title": "Enter the motor MAC code",
+            "hint": "For example: F30D or A1F5",
+            "type": "text",
+            "length": 4
+          }
+        },
+        {
+          "id": "loading",
+          "template": "loading"
+        },
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          },
+          "options": {
+            "singular": true
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
+      "id": "rollerblind"
+    },
+    {
+      "name": {
+        "en": "VenetianBlind"
+      },
+      "class": "blinds",
+      "capabilities": [
+        "windowcoverings_set",
+        "windowcoverings_state",
+        "windowcoverings_tilt_set",
+        "battery"
+      ],
+      "platforms": [
+        "local",
+        "cloud"
+      ],
+      "connectivity": [
+        "ble"
+      ],
+      "images": {
+        "small": "/drivers/venetianblind/assets/images/small.png",
+        "large": "/drivers/venetianblind/assets/images/large.png",
+        "xlarge": "/drivers/venetianblind/assets/images/xlarge.png"
+      },
+      "pair": [
+        {
+          "id": "pincode",
+          "template": "pincode",
+          "options": {
+            "title": "Enter the motor MAC code",
+            "hint": "For example: F30D or A1F5",
+            "type": "text",
+            "length": 4
+          }
+        },
+        {
+          "id": "loading",
+          "template": "loading"
+        },
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          },
+          "options": {
+            "singular": true
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
+      "id": "venetianblind"
+    }
+  ],
+  "capabilities": {
+    "battery": {
+      "type": "string",
+      "title": {
+        "en": "Battery"
+      },
+      "uiComponent": "sensor",
+      "getable": true,
+      "setable": true,
+      "uiQuickAction": true,
+      "icon": "/assets/battery_capability.svg"
+    }
+  }
+}

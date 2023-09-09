@@ -1,0 +1,50 @@
+{
+  "name": {
+    "en": "VenetianBlind"
+  },
+  "class": "blinds",
+  "capabilities": [
+    "windowcoverings_set",
+    "windowcoverings_state",
+    "windowcoverings_tilt_set",
+    "battery"
+  ],
+  "platforms": [
+    "local",
+    "cloud"
+  ],
+  "connectivity": [
+    "ble"
+  ],
+  "images": {
+    "small": "{{driverAssetsPath}}/images/small.png",
+    "large": "{{driverAssetsPath}}/images/large.png",
+    "xlarge": "{{driverAssetsPath}}/images/xlarge.png"
+  },
+  "pair": [
+    {
+      "id": "pincode",
+      "template": "pincode",
+      "options": {
+        "title": "Enter the motor MAC code",
+        "hint": "For example: F30D or A1F5",
+        "type": "text",
+        "length": 4
+      }
+    },
+    {
+      "id": "loading",
+      "template": "loading"
+    },
+    {
+      "id": "list_devices",
+      "template": "list_devices",
+      "navigation": { "next": "add_devices" },
+      "options": { "singular": true }
+    },
+    {
+      "id": "add_devices",
+      "template": "add_devices"
+    }
+  ]
+}

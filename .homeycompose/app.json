@@ -1,0 +1,32 @@
+{
+  "id": "com.coulisse.motionblindsble",
+  "version": "1.0.0",
+  "compatibility": ">=5.0.0",
+  "sdk": 3,
+  "platforms": [
+    "local",
+    "cloud"
+  ],
+  "name": {
+    "en": "MotionBlinds BLE"
+  },
+  "description": {
+    "en": "MotionBlinds BLE"
+  },
+  "category": [
+    "climate"
+  ],
+  "permissions": [
+    "homey:wireless:ble",
+    "homey:manager:ledring"
+  ],
+  "images": {
+    "small": "/assets/images/small.png",
+    "large": "/assets/images/large.png",
+    "xlarge": "/assets/images/xlarge.png"
+  },
+  "author": {
+    "name": "Lenn Perik",
+    "email": "lennperik@hotmail.nl"
+  }
+}
