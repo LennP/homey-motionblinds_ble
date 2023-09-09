@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "crypto-js": "^4.1.1",
-    "luxon": "^3.3.0",
+    "luxon": "^3.4.3",
     "uninstall": "^0.0.0"
   }
 }
