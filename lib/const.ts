@@ -8,12 +8,12 @@ enum Setting {
 }
 
 enum MotionCapability {
-    POSITION_SLIDER = "windowcoverings_set",
-    TILT_SLIDER = "windowcoverings_tilt_set",
-    BUTTONS = "windowcoverings_state",
-    BATTERY_SENSOR = "battery",
-    CONNECTED_SENSOR = "connected",
-    SPEED_PICKER = "speed"
+    POSITION_SLIDER =   "windowcoverings_set",
+    TILT_SLIDER =       "windowcoverings_tilt_set",
+    BUTTONS =           "windowcoverings_state",
+    BATTERY_SENSOR =    "battery",
+    CONNECTED_SENSOR =  "connected",
+    SPEED_PICKER =      "speed"
 }
 
 enum MotionSpeedLevel {

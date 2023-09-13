@@ -4,6 +4,56 @@ import { MotionSpeedLevel, MotionConnectionType, MotionService, MotionCharacteri
 import MotionCommand from '../command'
 import MotionNotification from '../notification'
 import MotionCrypt from '../crypt'
+import EventEmitter from 'events';
+
+class ConnectTask {
+
+  static connectedEvent: EventEmitter | undefined
+  static lastCallerTime: number | undefined
+  static callers: number = 0
+
+  static async waitForConnection(device: GenericDevice) {
+    ConnectTask.callers++
+    const callerTime = Date.now()
+    ConnectTask.lastCallerTime = callerTime
+    if (ConnectTask.connectedEvent == undefined) {
+      ConnectTask.connectedEvent = new EventEmitter()
+      
+      device.log("First caller connecting")
+      if (await device._connect()) {
+        ConnectTask.connectedEvent.emit("connected", true)
+      } else {
+        ConnectTask.connectedEvent.emit("connected", false)
+      }
+      device.log("Done connecting!")
+
+      ConnectTask.callerDone(device)
+      
+    } else {
+      device.log("Already connecting, waiting for connection...")
+      return new Promise((resolve) => {
+        ConnectTask.connectedEvent?.on("connected", (connected) => {
+          device.log(`Last caller ${ConnectTask.lastCallerTime}`)
+          device.log(`Self caller ${callerTime}`)
+          const isLastCaller = ConnectTask.lastCallerTime == callerTime
+          device.log("Last caller executing command")
+          resolve(connected && isLastCaller)
+          ConnectTask.callerDone(device)
+        })
+      })
+    }
+
+  }
+  
+  static callerDone(device: GenericDevice) {
+    ConnectTask.callers--
+    device.log(ConnectTask.callers)
+    if (ConnectTask.callers == 0) {
+      ConnectTask.connectedEvent = undefined
+      ConnectTask.lastCallerTime = undefined
+    }
+  }
+}
 
 class GenericDevice extends Homey.Device {
 
@@ -42,8 +92,7 @@ class GenericDevice extends Homey.Device {
 
     // Handle slider value changes, value from 0.00 to 1.00
     this.registerCapabilityListener(MotionCapability.POSITION_SLIDER, async (position) => {
-      if (this.isConnecting()) return
-      await this.connectIfNotConnected()
+      if (!await this.connect()) return
       
       position = Math.ceil(position * 100)
       const percentageCommand: Buffer = MotionCommand.percentage(position)
@@ -54,8 +103,7 @@ class GenericDevice extends Homey.Device {
 
     // Handle button clicks, strings: up, idle, down
     this.registerCapabilityListener(MotionCapability.BUTTONS, async (state) => {
-      if (this.isConnecting()) return
-      await this.connectIfNotConnected()
+      if (!await this.connect()) return
     
       let stateCommand: Buffer = Buffer.from('')
       switch(state) {
@@ -92,8 +140,7 @@ class GenericDevice extends Homey.Device {
 
     // Handle speed value changes
     this.registerCapabilityListener(MotionCapability.SPEED_PICKER, async (key: string) => {
-      if (this.isConnecting()) return
-      await this.connectIfNotConnected()
+      if (!await this.connect()) return
       const speed_level: MotionSpeedLevel = Number.parseInt(key)
       this.#commandCharacteristic?.write(MotionCommand.speed(speed_level))
       this.refreshDisconnectTimer(Settings.DISCONNECT_TIME)
@@ -101,10 +148,9 @@ class GenericDevice extends Homey.Device {
 
     // Handle tilt slider value changes, value from 0.00 to 1.00
     this.registerCapabilityListener(MotionCapability.TILT_SLIDER, async (angle: number) => {
+      if (!await this.connect()) return
       angle = Math.round(180 * angle)
       this.log(angle)
-      if (this.isConnecting()) return
-      await this.connectIfNotConnected()
       const tiltCommand: Buffer = MotionCommand.tilt(angle)
       await this.#commandCharacteristic?.write(tiltCommand)
       this.refreshDisconnectTimer(10000)
@@ -124,12 +170,13 @@ class GenericDevice extends Homey.Device {
     return this.#commandCharacteristic != undefined && this.#commandCharacteristic.service.peripheral.isConnected
   }
 
-  async connectIfNotConnected() {
+  async connect() {
     if (!this.isConnected())
-      await this.connect()
+      return await ConnectTask.waitForConnection(this)
+    return true
   }
 
-  async connect() {
+  async _connect(): Promise<boolean> {
     await this.setCapabilityValue(MotionCapability.CONNECTED_SENSOR, MotionConnectionType.CONNECTING)
     this.setIsConnecting(true)
     try {
@@ -156,11 +203,12 @@ class GenericDevice extends Homey.Device {
       this.refreshDisconnectTimer(Settings.DISCONNECT_TIME)
       this.log("Ready to send command")
       this.setIsConnecting(false)
-
+      return true
 
     } catch (e) {
       await this.setCapabilityValue(MotionCapability.CONNECTED_SENSOR, MotionConnectionType.DISCONNECTED)
-      throw e
+      this.log(e)
+      return false
     }
   }
 
