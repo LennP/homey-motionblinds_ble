@@ -39,7 +39,8 @@
       "capabilities": [
         "windowcoverings_set",
         "windowcoverings_state",
-        "battery"
+        "battery",
+        "connected"
       ],
       "platforms": [
         "local",
@@ -93,7 +94,8 @@
       "capabilities": [
         "windowcoverings_set",
         "windowcoverings_state",
-        "battery"
+        "battery",
+        "connected"
       ],
       "platforms": [
         "local",
@@ -147,7 +149,8 @@
       "capabilities": [
         "windowcoverings_set",
         "windowcoverings_state",
-        "battery"
+        "battery",
+        "connected"
       ],
       "platforms": [
         "local",
@@ -201,7 +204,8 @@
       "capabilities": [
         "windowcoverings_set",
         "windowcoverings_state",
-        "battery"
+        "battery",
+        "connected"
       ],
       "platforms": [
         "local",
@@ -255,7 +259,8 @@
       "capabilities": [
         "windowcoverings_set",
         "windowcoverings_state",
-        "battery"
+        "battery",
+        "connected"
       ],
       "platforms": [
         "local",
@@ -310,7 +315,8 @@
         "windowcoverings_set",
         "windowcoverings_state",
         "windowcoverings_tilt_set",
-        "battery"
+        "battery",
+        "connected"
       ],
       "platforms": [
         "local",
@@ -365,7 +371,8 @@
         "windowcoverings_set",
         "windowcoverings_state",
         "windowcoverings_tilt_set",
-        "battery"
+        "battery",
+        "connected"
       ],
       "platforms": [
         "local",
@@ -420,7 +427,8 @@
         "windowcoverings_set",
         "windowcoverings_state",
         "windowcoverings_tilt_set",
-        "battery"
+        "battery",
+        "connected"
       ],
       "platforms": [
         "local",
@@ -476,8 +484,43 @@
       "uiComponent": "sensor",
       "getable": true,
       "setable": true,
-      "uiQuickAction": true,
       "icon": "/assets/battery_capability.svg"
+    },
+    "connected": {
+      "type": "enum",
+      "title": {
+        "en": "Connected"
+      },
+      "values": [
+        {
+          "id": "connected",
+          "title": {
+            "en": "Yes"
+          }
+        },
+        {
+          "id": "connecting",
+          "title": {
+            "en": "Connecting..."
+          }
+        },
+        {
+          "id": "disconnected",
+          "title": {
+            "en": "No"
+          }
+        },
+        {
+          "id": "disconnecting",
+          "title": {
+            "en": "Disconnecting..."
+          }
+        }
+      ],
+      "uiComponent": "sensor",
+      "getable": true,
+      "setable": true,
+      "icon": "/assets/connected_capability.svg"
     }
   }
 }

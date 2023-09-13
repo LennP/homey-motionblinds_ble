@@ -1,8 +1,5 @@
-import { BleAdvertisement, BlePeripheral, BleService, BleCharacteristic } from 'homey';
-
-import { MotionService, MotionCharacteristic, MotionNotificationType, Settings } from '../const'
+import { Settings } from '../const'
 import MotionCommand from '../command'
-import MotionNotification from '../notification'
 import MotionCrypt from '../crypt'
 import GenericDevice from './genericDevice';
 
@@ -14,6 +11,8 @@ class GenericPositionDevice extends GenericDevice {
    * onInit is called when the device is initialized.
    */
   async onInit() {
+
+    super.onInit()
 
     // Handle slider value changes, value from 0.00 to 1.00
     this.registerCapabilityListener('windowcoverings_set', async (percent) => {
@@ -64,8 +63,9 @@ class GenericPositionDevice extends GenericDevice {
       this.refreshDisconnectTimer(Settings.DISCONNECT_TIME)
 
     })
+
   }
-  
+
 }
 
 export default GenericPositionDevice;

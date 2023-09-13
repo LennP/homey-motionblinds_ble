@@ -7,6 +7,13 @@ enum Settings {
 
 }
 
+enum MotionConnectionType {
+    CONNECTED = "connected",
+    CONNECTING = "connecting",
+    DISCONNECTED = "disconnected",
+    DISCONNECTING = "disconnecting"
+}
+
 enum MotionBlindType {
     ROLLER =                "roller",
     HONEYCOMB =             "honeycomb",
@@ -43,4 +50,4 @@ enum MotionNotificationType {
     FIRST_CHECK =   "12040f02"
 }
 
-export {MotionBlindType, MotionService, MotionCharacteristic, MotionCommandType, MotionNotificationType, Settings}
+export {MotionConnectionType, MotionBlindType, MotionService, MotionCharacteristic, MotionCommandType, MotionNotificationType, Settings}

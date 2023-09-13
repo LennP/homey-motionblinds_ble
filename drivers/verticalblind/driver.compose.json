@@ -7,7 +7,8 @@
     "windowcoverings_set",
     "windowcoverings_state",
     "windowcoverings_tilt_set",
-    "battery"
+    "battery",
+    "connected"
   ],
   "platforms": [
     "local",

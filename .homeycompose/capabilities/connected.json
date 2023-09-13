@@ -1,0 +1,33 @@
+{
+    "type": "enum",
+    "title": { "en": "Connected" },
+    "values" : [{
+      "id": "connected",
+      "title": {
+        "en": "Yes"
+      }
+    },
+    {
+      "id": "connecting",
+      "title": {
+        "en": "Connecting..."
+      }
+    },
+    {
+      "id": "disconnected",
+      "title": {
+        "en": "No"
+      }
+    },
+    {
+      "id": "disconnecting",
+      "title": {
+        "en": "Disconnecting..."
+      }
+    }
+    ],
+    "uiComponent": "sensor",
+    "getable": true,
+    "setable": true,
+    "icon": "/assets/connected_capability.svg"
+  }

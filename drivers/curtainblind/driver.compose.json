@@ -6,7 +6,8 @@
   "capabilities": [
     "windowcoverings_set",
     "windowcoverings_state",
-    "battery"
+    "battery",
+    "connected"
   ],
   "platforms": [
     "local",

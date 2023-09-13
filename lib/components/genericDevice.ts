@@ -1,6 +1,6 @@
 import Homey, { BleAdvertisement, BlePeripheral, BleService, BleCharacteristic } from 'homey';
 
-import { MotionService, MotionCharacteristic, MotionNotificationType, Settings } from '../const'
+import { MotionConnectionType, MotionService, MotionCharacteristic, MotionNotificationType, Settings } from '../const'
 import MotionCommand from '../command'
 import MotionNotification from '../notification'
 
@@ -23,7 +23,8 @@ class GenericDevice extends Homey.Device {
    * onInit is called when the device is initialized.
    */
   async onInit() {
-    super.onInit()
+    this.log(`${this.constructor.name} (${this.peripheralUUID}) has been initialized`);
+    await this.setCapabilityValue('connected', MotionConnectionType.DISCONNECTED)
   }
 
   setIsConnecting(connecting: boolean) {
@@ -44,27 +45,36 @@ class GenericDevice extends Homey.Device {
   }
 
   async connect() {
+    await this.setCapabilityValue("connected", MotionConnectionType.CONNECTING)
     this.setIsConnecting(true)
-    this.log(`Finding device ${this.peripheralUUID}...`)
-    const advertisement: BleAdvertisement = await this.homey.ble.find(this.peripheralUUID, 5000)
-    this.log('Connecting to device...')
-    const peripheral: BlePeripheral = await advertisement.connect()
-    this.log('Getting service...')
-    // this.log(await peripheral.discoverAllServicesAndCharacteristics())
-    const service: BleService = await peripheral.getService(MotionService.CONTROL)
-    this.log('Getting characteristic...')
-    this.commandCharacteristic = await service.getCharacteristic(MotionCharacteristic.COMMAND)
-    this.notificationCharacteristic = await service.getCharacteristic(MotionCharacteristic.NOTIFICATION)
-    this.log("Subscribing to notifications...")
-    await this.notificationCharacteristic?.subscribeToNotifications(((notification: Buffer) => this.notificationHandler(notification)).bind(this))
-    this.log("Setting user key...")
-    const userKeyCommand: Buffer = MotionCommand.setKey()
-    await this.commandCharacteristic.write(userKeyCommand)
-    const statusQueryCommand: Buffer = MotionCommand.statusQuery()
-    await this.commandCharacteristic.write(statusQueryCommand)
-    this.refreshDisconnectTimer(Settings.DISCONNECT_TIME)
-    this.log("Ready to send command")
-    this.setIsConnecting(false)
+    try {
+      this.log(`Finding device ${this.peripheralUUID}...`)
+      const advertisement: BleAdvertisement = await this.homey.ble.find(this.peripheralUUID, 5000)
+
+      this.log('Connecting to device...')
+      const peripheral: BlePeripheral = await advertisement.connect()
+      await this.setCapabilityValue('connected', MotionConnectionType.CONNECTED)
+
+      this.log('Getting service...')
+      // this.log(await peripheral.discoverAllServicesAndCharacteristics())
+      const service: BleService = await peripheral.getService(MotionService.CONTROL)
+      this.log('Getting characteristic...')
+      this.commandCharacteristic = await service.getCharacteristic(MotionCharacteristic.COMMAND)
+      this.notificationCharacteristic = await service.getCharacteristic(MotionCharacteristic.NOTIFICATION)
+      this.log("Subscribing to notifications...")
+      await this.notificationCharacteristic?.subscribeToNotifications(((notification: Buffer) => this.notificationHandler(notification)).bind(this))
+      this.log("Setting user key...")
+      const userKeyCommand: Buffer = MotionCommand.setKey()
+      await this.commandCharacteristic.write(userKeyCommand)
+      const statusQueryCommand: Buffer = MotionCommand.statusQuery()
+      await this.commandCharacteristic.write(statusQueryCommand)
+      this.refreshDisconnectTimer(Settings.DISCONNECT_TIME)
+      this.log("Ready to send command")
+      this.setIsConnecting(false)
+    } catch (e) {
+      this.log(e)
+      await this.setCapabilityValue('connected', MotionConnectionType.DISCONNECTED)
+    }
   }
 
   async notificationHandler(notificationBuffer: Buffer) {
@@ -99,7 +109,8 @@ class GenericDevice extends Homey.Device {
       clearTimeout(this.disconnectTimerID)
     
     this.disconnectTimerID = setTimeout((async () => {
-      await this.disconnect()
+        await this.setCapabilityValue("connected", MotionConnectionType.DISCONNECTED)
+        await this.disconnect()
     }).bind(this), time * 1000)
   }
 

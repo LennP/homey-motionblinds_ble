@@ -1,5 +1,5 @@
 import GenericDriver from '../../lib/components/genericDriver'
 
-class VenetianBlindDriver extends GenericDriver {}
+class VenetianTiltOnlyBlindDriver extends GenericDriver {}
 
-module.exports = VenetianBlindDriver;
+module.exports = VenetianTiltOnlyBlindDriver;

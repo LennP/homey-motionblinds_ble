@@ -4,6 +4,5 @@
     "uiComponent": "sensor",
     "getable": true,
     "setable": true,
-    "uiQuickAction": true,
     "icon": "/assets/battery_capability.svg"
   }
