@@ -1,10 +1,25 @@
 // Settings for application
-enum Settings {
+enum Setting {
     
     DISCOVER_TIME = 20,          // Time in seconds used to discover devices
     DISCOVER_ITERATIONS = 1,    // 
     DISCONNECT_TIME = 15        // Time in seconds before the device is disconnected
 
+}
+
+enum MotionCapability {
+    POSITION_SLIDER = "windowcoverings_set",
+    TILT_SLIDER = "windowcoverings_tilt_set",
+    BUTTONS = "windowcoverings_state",
+    BATTERY_SENSOR = "battery",
+    CONNECTED_SENSOR = "connected",
+    SPEED_PICKER = "speed"
+}
+
+enum MotionSpeedLevel {
+    LOW =       1,
+    MEDIUM =    2,
+    HIGH =      3
 }
 
 enum MotionConnectionType {
@@ -42,6 +57,7 @@ enum MotionCommandType {
     PERCENT =       "05020440",
     ANGLE =         "05020420",
     SET_KEY =       "02c001",
+    SPEED =         "0403010a",
     STATUS_QUERY =  "03050f02"
 }
 
@@ -50,4 +66,4 @@ enum MotionNotificationType {
     FIRST_CHECK =   "12040f02"
 }
 
-export {MotionConnectionType, MotionBlindType, MotionService, MotionCharacteristic, MotionCommandType, MotionNotificationType, Settings}
+export {MotionCapability, MotionSpeedLevel, MotionConnectionType, MotionBlindType, MotionService, MotionCharacteristic, MotionCommandType, MotionNotificationType, Setting as Settings}

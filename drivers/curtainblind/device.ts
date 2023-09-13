@@ -1,5 +1,5 @@
-import GenericPositionDevice from '../../lib/components/genericPositionDevice'
+import GenericDevice from '../../lib/components/genericDevice'
 
-class CurtainBlindDevice extends GenericPositionDevice {}
+class CurtainBlindDevice extends GenericDevice {}
 
 module.exports = CurtainBlindDevice;

@@ -1,5 +1,5 @@
-import GenericTiltDevice from '../../lib/components/genericTiltDevice'
+import GenericDevice from '../../lib/components/genericDevice'
 
-class VenetianBlindDevice extends GenericTiltDevice {}
+class VenetianBlindDevice extends GenericDevice {}
 
 module.exports = VenetianBlindDevice;

@@ -1,0 +1,28 @@
+{
+    "type": "enum",
+    "title": { "en": "Motor speed" },
+    "values" : [
+      {
+        "id": "1",
+        "title": {
+          "en": "Low"
+        }
+      },
+      {
+        "id": "2",
+        "title": {
+          "en": "Medium"
+        }
+      },
+      {
+        "id": "3",
+        "title": {
+          "en": "High"
+        }
+      }
+      ],
+    "uiComponent": "picker",
+    "getable": true,
+    "setable": true,
+    "icon": "/assets/speed_capability.svg"
+  }

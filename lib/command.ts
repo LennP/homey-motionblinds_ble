@@ -1,5 +1,4 @@
-
-import { MotionCommandType } from './const'
+import { MotionSpeedLevel, MotionCommandType } from './const'
 import MotionCrypt from './crypt'
 import MotionTime from './time'
 
@@ -7,22 +6,22 @@ class MotionCommand {
 
     static up(): Buffer {
         const command: string = MotionCommandType.OPEN + MotionTime.getTime()
-        return MotionCommand._encode_encrypt(command);
+        return MotionCommand._encodeEncrypt(command);
     }
 
     static down(): Buffer {
         const command: string = MotionCommandType.CLOSE + MotionTime.getTime()
-        return MotionCommand._encode_encrypt(command);
+        return MotionCommand._encodeEncrypt(command);
     }
 
     static stop(): Buffer {
         const command: string = MotionCommandType.STOP + MotionTime.getTime()
-        return MotionCommand._encode_encrypt(command);
+        return MotionCommand._encodeEncrypt(command);
     }
 
     static favorite(): Buffer {
         const command: string = MotionCommandType.FAVORITE + MotionTime.getTime()
-        return MotionCommand._encode_encrypt(command);
+        return MotionCommand._encodeEncrypt(command);
     }
 
     static percentage(percent: number): Buffer {
@@ -31,7 +30,7 @@ class MotionCommand {
         
         const percent_hex: string = percent.toString(16).padStart(2, '0')
         const command: string = MotionCommandType.PERCENT + percent_hex + "00" + MotionTime.getTime()
-        return MotionCommand._encode_encrypt(command);;
+        return MotionCommand._encodeEncrypt(command);;
     }
 
     static tilt(angle: number): Buffer {
@@ -40,20 +39,26 @@ class MotionCommand {
         
         const angle_hex: string = angle.toString(16).padStart(2, '0')
         const command: string = MotionCommandType.ANGLE + "00" + angle_hex + MotionTime.getTime()
-        return MotionCommand._encode_encrypt(command);;
+        return MotionCommand._encodeEncrypt(command);;
     }
 
     static setKey(): Buffer {
         const command: string = MotionCommandType.SET_KEY + MotionTime.getTime()
-        return MotionCommand._encode_encrypt(command);
+        return MotionCommand._encodeEncrypt(command);
+    }
+
+    static speed(speed: MotionSpeedLevel): Buffer {
+        const speed_hex: string = speed.toString(16).padStart(2, '0')
+        const command: string = MotionCommandType.SPEED + speed_hex + MotionTime.getTime()
+        return MotionCommand._encodeEncrypt(command);
     }
 
     static statusQuery(): Buffer {
         const command: string = MotionCommandType.STATUS_QUERY + MotionTime.getTime()
-        return MotionCommand._encode_encrypt(command);
+        return MotionCommand._encodeEncrypt(command);
     }
 
-    static _encode_encrypt(command: string): Buffer {
+    static _encodeEncrypt(command: string): Buffer {
         return Buffer.from(MotionCrypt.encrypt(command), "hex")
     }
 

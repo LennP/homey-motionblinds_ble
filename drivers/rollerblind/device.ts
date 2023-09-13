@@ -1,5 +1,5 @@
-import GenericPositionDevice from '../../lib/components/genericPositionDevice'
+import GenericDevice from '../../lib/components/genericDevice'
 
-class RollerBlindDevice extends GenericPositionDevice {}
+class RollerBlindDevice extends GenericDevice {}
 
 module.exports = RollerBlindDevice;
