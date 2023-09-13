@@ -1,14 +1,5 @@
-const GenericDriver = require('../../lib/components/genericDriver')
+import GenericDriver from '../../lib/components/genericDriver'
 
-class RollerBlindDriver extends GenericDriver {
-
-  /**
-   * onInit is called when the driver is initialized.
-   */
-  async onInit() {
-    this.log('RollerBlindDriver has been initialized');
-  }
-
-}
+class RollerBlindDriver extends GenericDriver {}
 
 module.exports = RollerBlindDriver;

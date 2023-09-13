@@ -1,11 +1,12 @@
 {
   "name": {
-    "en": "Curtain Blind"
+    "en": "Venetian Blind (Tilt-only)"
   },
   "class": "blinds",
   "capabilities": [
     "windowcoverings_set",
     "windowcoverings_state",
+    "windowcoverings_tilt_set",
     "battery"
   ],
   "platforms": [

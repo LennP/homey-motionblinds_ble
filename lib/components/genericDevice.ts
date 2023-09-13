@@ -1,16 +1,14 @@
 import Homey, { BleAdvertisement, BlePeripheral, BleService, BleCharacteristic } from 'homey';
 
-const { MotionService, MotionCharacteristic, MotionNotificationType, Settings } = require('../const')
-const MotionCommand = require('../command')
-const MotionNotification = require('../notification')
-const MotionCrypt = require('../crypt')
+import { MotionService, MotionCharacteristic, MotionNotificationType, Settings } from '../const'
+import MotionCommand from '../command'
+import MotionNotification from '../notification'
 
 class GenericDevice extends Homey.Device {
 
-  #peripheralUUID: string = this.getData().uuid
-  #isConnecting: boolean = false
-  #lastIdleClickTime: number = 0
-  #disconnectTimerID: NodeJS.Timeout | undefined
+  peripheralUUID: string = this.getData().uuid
+  connecting: boolean = false
+  disconnectTimerID: NodeJS.Timeout | undefined
   commandCharacteristic: BleCharacteristic | undefined
   notificationCharacteristic: BleCharacteristic | undefined
 
@@ -18,71 +16,22 @@ class GenericDevice extends Homey.Device {
   * onAdded is called when the user adds the device, called just after pairing.
   */
   async onAdded() {
-    this.log('GenericDevice has been added');
+    this.log(`${this.constructor.name} has been added`);
   }
 
   /**
    * onInit is called when the device is initialized.
    */
   async onInit() {
-
-    // Handle slider value changes, value from 0.00 to 1.00
-    this.registerCapabilityListener('windowcoverings_set', async (percent) => {
-      if (this.isConnecting()) return
-      await this.connectIfNotConnected()
-      
-      const p = Math.ceil(percent * 100)
-      const percentageCommand: Buffer = MotionCommand.percentage(p)
-      await this.commandCharacteristic?.write(percentageCommand)
-      this.refreshDisconnectTimer(Settings.DISCONNECT_TIME)
-      this.log(percent)
-    })
-
-    // Handle button clicks, strings: up, idle, down
-    this.registerCapabilityListener('windowcoverings_state', async (state) => {
-      if (this.isConnecting()) return
-      await this.connectIfNotConnected()
-
-      let stateCommand: Buffer = Buffer.from('')
-      switch(state) {
-        case "up": {
-          stateCommand = MotionCommand.up()
-          break
-        }
-        case "idle": {
-          const currentIdleClickTime = Date.now()
-          if (this.#lastIdleClickTime != undefined && currentIdleClickTime - this.#lastIdleClickTime < 500) {
-            this.#lastIdleClickTime = 0
-            stateCommand = MotionCommand.favorite()
-          } else {
-            this.#lastIdleClickTime = currentIdleClickTime
-            stateCommand = MotionCommand.stop()
-          }
-          break
-        }
-        case "down": {
-          stateCommand = MotionCommand.down()
-          break
-        }
-        default: {
-          this.error(`Could not find state: ${state}`)
-          return
-        }
-      }
-     
-      this.log(`Sending ${MotionCrypt.decrypt(stateCommand.toString('hex'))}`)
-      await this.commandCharacteristic?.write(stateCommand)
-      this.refreshDisconnectTimer(Settings.DISCONNECT_TIME)
-
-    })
+    super.onInit()
   }
 
   setIsConnecting(connecting: boolean) {
-    this.#isConnecting = connecting
+    this.connecting = connecting
   }
 
   isConnecting(): boolean {
-    return this.#isConnecting
+    return this.connecting
   }
 
   isConnected(): boolean {
@@ -96,8 +45,8 @@ class GenericDevice extends Homey.Device {
 
   async connect() {
     this.setIsConnecting(true)
-    this.log(`Finding device ${this.#peripheralUUID}...`)
-    const advertisement: BleAdvertisement = await this.homey.ble.find(this.#peripheralUUID, 5000)
+    this.log(`Finding device ${this.peripheralUUID}...`)
+    const advertisement: BleAdvertisement = await this.homey.ble.find(this.peripheralUUID, 5000)
     this.log('Connecting to device...')
     const peripheral: BlePeripheral = await advertisement.connect()
     this.log('Getting service...')
@@ -146,10 +95,10 @@ class GenericDevice extends Homey.Device {
 
   refreshDisconnectTimer(time: number) {
     // Delete previous timer
-    if (this.#disconnectTimerID)
-      clearTimeout(this.#disconnectTimerID)
+    if (this.disconnectTimerID)
+      clearTimeout(this.disconnectTimerID)
     
-    this.#disconnectTimerID = setTimeout((async () => {
+    this.disconnectTimerID = setTimeout((async () => {
       await this.disconnect()
     }).bind(this), time * 1000)
   }
@@ -157,7 +106,6 @@ class GenericDevice extends Homey.Device {
   async disconnect() {
     await this.commandCharacteristic?.service.peripheral.disconnect()
   }
-
 
   /**
    * onSettings is called when the user updates the device's settings.
@@ -197,4 +145,4 @@ class GenericDevice extends Homey.Device {
 
 }
 
-module.exports = GenericDevice;
+export default GenericDevice;

@@ -1,15 +1,15 @@
 import Homey from 'homey';
 
-const MotionCrypt = require('./lib/crypt')
-const MotionTime = require('./lib/time')
+import MotionCrypt from './lib/crypt'
+import MotionTime from './lib/time'
 
-class MotionBlindBLE extends Homey.App {
+class MotionBlindsBLE extends Homey.App {
 
   /**
    * onInit is called when the app is initialized.
    */
   async onInit() {
-    this.log('MotionBlinds BLE has been initialized');
+    this.log(`${this.constructor.name} has been initialized`);
 
     // Adjusts the time for the time zone
     const currentTimeZone = this.homey.clock.getTimezone()
@@ -23,4 +23,4 @@ class MotionBlindBLE extends Homey.App {
 
 }
 
-module.exports = MotionBlindBLE;
+module.exports = MotionBlindsBLE;

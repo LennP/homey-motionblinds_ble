@@ -44,5 +44,5 @@ class MotionCrypt {
 
 }
 
-module.exports = MotionCrypt;
+export default MotionCrypt
 

@@ -62,7 +62,7 @@ class MotionTime {
 
 }
 
-module.exports = MotionTime;
+export default MotionTime;
 
 
 

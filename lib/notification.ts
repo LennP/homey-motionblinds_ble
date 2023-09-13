@@ -1,6 +1,4 @@
-
-const { MotionCommand: MotionCommandType } = require('./const')
-const MotionCrypt = require('./crypt')
+import MotionCrypt from './crypt'
 
 class MotionNotification {
 
@@ -50,4 +48,4 @@ class MotionNotification {
 
 }
 
-module.exports = MotionNotification;
+export default MotionNotification;

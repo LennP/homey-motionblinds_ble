@@ -1,7 +1,6 @@
 import Homey, { BleAdvertisement } from 'homey';
 import { PairSession } from 'homey/lib/Driver';
-
-const { Settings } = require('../const')
+import { MotionBlindType, Settings } from '../const'
 
 class GenericDriver extends Homey.Driver {
 
@@ -9,7 +8,7 @@ class GenericDriver extends Homey.Driver {
    * onInit is called when the driver is initialized.
    */
   async onInit() {
-    this.log(`GenericDriver has been initialized`);
+    this.log(`${this.constructor.name} has been initialized`);
   }
 
   isMac(s: string): boolean {
@@ -64,4 +63,4 @@ class GenericDriver extends Homey.Driver {
 
 }
 
-module.exports = GenericDriver;
+export default GenericDriver;

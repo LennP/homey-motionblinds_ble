@@ -1,7 +1,7 @@
 
-const { MotionCommandType } = require('./const')
-const MotionCrypt = require('./crypt')
-const MotionTime = require('./time')
+import { MotionCommandType } from './const'
+import MotionCrypt from './crypt'
+import MotionTime from './time'
 
 class MotionCommand {
 
@@ -60,4 +60,4 @@ class MotionCommand {
 
 }
 
-module.exports = MotionCommand;
+export default MotionCommand

@@ -1,7 +1,7 @@
-const GenericDevice = require('./genericDevice')
-const MotionCommand = require('../command')
+import GenericPositionDevice from './genericPositionDevice'
+import MotionCommand from '../command'
 
-class GenericTiltDevice extends GenericDevice {
+class GenericTiltDevice extends GenericPositionDevice {
     
   /**
    * onInit is called when the device is initialized.
@@ -31,4 +31,4 @@ class GenericTiltDevice extends GenericDevice {
     
 }
 
-module.exports = GenericTiltDevice;
+export default GenericTiltDevice;

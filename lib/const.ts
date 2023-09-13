@@ -1,5 +1,3 @@
-
-
 // Settings for application
 enum Settings {
     
@@ -7,6 +5,17 @@ enum Settings {
     DISCOVER_ITERATIONS = 1,    // 
     DISCONNECT_TIME = 15        // Time in seconds before the device is disconnected
 
+}
+
+enum MotionBlindType {
+    ROLLER =                "roller",
+    HONEYCOMB =             "honeycomb",
+    ROMAN =                 "roman",
+    VENETIAN =              "venetian",
+    VENETIAN_TILT_ONLY =    "venetian_tilt_only",
+    DOUBLE_ROLLER =         "double_roller",
+    CURTAIN =               "curtain",
+    VERTICAL =              "vertical"
 }
 
 enum MotionService {
@@ -34,4 +43,4 @@ enum MotionNotificationType {
     FIRST_CHECK =   "12040f02"
 }
 
-module.exports = {MotionService, MotionCharacteristic, MotionCommandType, MotionNotificationType, Settings}
+export {MotionBlindType, MotionService, MotionCharacteristic, MotionCommandType, MotionNotificationType, Settings}

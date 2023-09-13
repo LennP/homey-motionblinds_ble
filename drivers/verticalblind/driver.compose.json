@@ -1,11 +1,12 @@
 {
   "name": {
-    "en": "Curtain Blind"
+    "en": "Vertical Blind"
   },
   "class": "blinds",
   "capabilities": [
     "windowcoverings_set",
     "windowcoverings_state",
+    "windowcoverings_tilt_set",
     "battery"
   ],
   "platforms": [

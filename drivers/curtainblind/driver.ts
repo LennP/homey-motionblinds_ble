@@ -1,14 +1,5 @@
-const GenericDriver = require('../../lib/components/genericDriver')
+import GenericDriver from '../../lib/components/genericDriver'
 
-class CurtainBlindDriver extends GenericDriver {
-
-  /**
-   * onInit is called when the driver is initialized.
-   */
-  async onInit() {
-    this.log('CurtainBlindDriver has been initialized');
-  }
-
-}
+class CurtainBlindDriver extends GenericDriver {}
 
 module.exports = CurtainBlindDriver;

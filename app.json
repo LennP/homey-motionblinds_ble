@@ -33,7 +33,7 @@
   "drivers": [
     {
       "name": {
-        "en": "CurtainBlind"
+        "en": "Curtain Blind"
       },
       "class": "blinds",
       "capabilities": [
@@ -87,7 +87,7 @@
     },
     {
       "name": {
-        "en": "DoubleRollerBlind"
+        "en": "Double Roller Blind"
       },
       "class": "blinds",
       "capabilities": [
@@ -141,7 +141,61 @@
     },
     {
       "name": {
-        "en": "RollerBlind"
+        "en": "Honeycomb Blind"
+      },
+      "class": "blinds",
+      "capabilities": [
+        "windowcoverings_set",
+        "windowcoverings_state",
+        "battery"
+      ],
+      "platforms": [
+        "local",
+        "cloud"
+      ],
+      "connectivity": [
+        "ble"
+      ],
+      "images": {
+        "small": "/drivers/honeycombblind/assets/images/small.png",
+        "large": "/drivers/honeycombblind/assets/images/large.png",
+        "xlarge": "/drivers/honeycombblind/assets/images/xlarge.png"
+      },
+      "pair": [
+        {
+          "id": "pincode",
+          "template": "pincode",
+          "options": {
+            "title": "Enter the motor MAC code",
+            "hint": "For example: F30D or A1F5",
+            "type": "text",
+            "length": 4
+          }
+        },
+        {
+          "id": "loading",
+          "template": "loading"
+        },
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          },
+          "options": {
+            "singular": true
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
+      "id": "honeycombblind"
+    },
+    {
+      "name": {
+        "en": "Roller Blind"
       },
       "class": "blinds",
       "capabilities": [
@@ -195,7 +249,61 @@
     },
     {
       "name": {
-        "en": "VenetianBlind"
+        "en": "Roman Blind"
+      },
+      "class": "blinds",
+      "capabilities": [
+        "windowcoverings_set",
+        "windowcoverings_state",
+        "battery"
+      ],
+      "platforms": [
+        "local",
+        "cloud"
+      ],
+      "connectivity": [
+        "ble"
+      ],
+      "images": {
+        "small": "/drivers/romanblind/assets/images/small.png",
+        "large": "/drivers/romanblind/assets/images/large.png",
+        "xlarge": "/drivers/romanblind/assets/images/xlarge.png"
+      },
+      "pair": [
+        {
+          "id": "pincode",
+          "template": "pincode",
+          "options": {
+            "title": "Enter the motor MAC code",
+            "hint": "For example: F30D or A1F5",
+            "type": "text",
+            "length": 4
+          }
+        },
+        {
+          "id": "loading",
+          "template": "loading"
+        },
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          },
+          "options": {
+            "singular": true
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
+      "id": "romanblind"
+    },
+    {
+      "name": {
+        "en": "Venetian Blind"
       },
       "class": "blinds",
       "capabilities": [
@@ -247,6 +355,116 @@
         }
       ],
       "id": "venetianblind"
+    },
+    {
+      "name": {
+        "en": "Venetian Blind (Tilt-only)"
+      },
+      "class": "blinds",
+      "capabilities": [
+        "windowcoverings_set",
+        "windowcoverings_state",
+        "windowcoverings_tilt_set",
+        "battery"
+      ],
+      "platforms": [
+        "local",
+        "cloud"
+      ],
+      "connectivity": [
+        "ble"
+      ],
+      "images": {
+        "small": "/drivers/venetiantiltonlyblind/assets/images/small.png",
+        "large": "/drivers/venetiantiltonlyblind/assets/images/large.png",
+        "xlarge": "/drivers/venetiantiltonlyblind/assets/images/xlarge.png"
+      },
+      "pair": [
+        {
+          "id": "pincode",
+          "template": "pincode",
+          "options": {
+            "title": "Enter the motor MAC code",
+            "hint": "For example: F30D or A1F5",
+            "type": "text",
+            "length": 4
+          }
+        },
+        {
+          "id": "loading",
+          "template": "loading"
+        },
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          },
+          "options": {
+            "singular": true
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
+      "id": "venetiantiltonlyblind"
+    },
+    {
+      "name": {
+        "en": "Vertical Blind"
+      },
+      "class": "blinds",
+      "capabilities": [
+        "windowcoverings_set",
+        "windowcoverings_state",
+        "windowcoverings_tilt_set",
+        "battery"
+      ],
+      "platforms": [
+        "local",
+        "cloud"
+      ],
+      "connectivity": [
+        "ble"
+      ],
+      "images": {
+        "small": "/drivers/verticalblind/assets/images/small.png",
+        "large": "/drivers/verticalblind/assets/images/large.png",
+        "xlarge": "/drivers/verticalblind/assets/images/xlarge.png"
+      },
+      "pair": [
+        {
+          "id": "pincode",
+          "template": "pincode",
+          "options": {
+            "title": "Enter the motor MAC code",
+            "hint": "For example: F30D or A1F5",
+            "type": "text",
+            "length": 4
+          }
+        },
+        {
+          "id": "loading",
+          "template": "loading"
+        },
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          },
+          "options": {
+            "singular": true
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
+      "id": "verticalblind"
     }
   ],
   "capabilities": {

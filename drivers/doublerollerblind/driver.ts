@@ -1,33 +1,5 @@
-import Homey from 'homey';
+import GenericDriver from '../../lib/components/genericDriver'
 
-class MyDriver extends Homey.Driver {
+class DoubleRollerBlindDriver extends GenericDriver {}
 
-  /**
-   * onInit is called when the driver is initialized.
-   */
-  async onInit() {
-    this.log('MyDriver has been initialized');
-  }
-
-  /**
-   * onPairListDevices is called when a user is adding a device and the 'list_devices' view is called.
-   * This should return an array with the data of devices that are available for pairing.
-   */
-  async onPairListDevices() {
-    return [
-      // Example device data, note that `store` is optional
-      // {
-      //   name: 'My Device',
-      //   data: {
-      //     id: 'my-device',
-      //   },
-      //   store: {
-      //     address: '127.0.0.1',
-      //   },
-      // },
-    ];
-  }
-
-}
-
-module.exports = MyDriver;
+module.exports = DoubleRollerBlindDriver;
