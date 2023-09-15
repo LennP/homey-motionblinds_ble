@@ -207,7 +207,8 @@
         "battery",
         "connected",
         "speed",
-        "rssi"
+        "rssi",
+        "favorite"
       ],
       "platforms": [
         "local",
@@ -523,6 +524,16 @@
       "getable": true,
       "setable": true,
       "icon": "/assets/connected_capability.svg"
+    },
+    "favorite": {
+      "type": "boolean",
+      "title": {
+        "en": "Favorite position"
+      },
+      "uiComponent": "button",
+      "getable": true,
+      "setable": true,
+      "icon": "/assets/favorite_capability.svg"
     },
     "rssi": {
       "type": "string",

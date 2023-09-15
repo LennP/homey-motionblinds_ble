@@ -99,17 +99,18 @@ class GenericDevice extends Homey.Device {
     // Handle slider value changes, value from 0.00 to 1.00
     this.registerCapabilityListener(MotionCapability.POSITION_SLIDER, async (position) => {
       if (!await this.connect()) return
+      this.refreshDisconnectTimer(Settings.DISCONNECT_TIME)
       
       position = Math.ceil(position * 100)
       const percentageCommand: Buffer = MotionCommand.percentage(position)
       await this.#commandCharacteristic?.write(percentageCommand)
-      this.refreshDisconnectTimer(Settings.DISCONNECT_TIME)
       this.log(position)
     })
 
     // Handle button clicks, strings: up, idle, down
     this.registerCapabilityListener(MotionCapability.BUTTONS, async (state) => {
       if (!await this.connect()) return
+      this.refreshDisconnectTimer(Settings.DISCONNECT_TIME)
     
       let stateCommand: Buffer = Buffer.from('')
       switch(state) {
@@ -140,26 +141,33 @@ class GenericDevice extends Homey.Device {
     
       this.log(`Sending ${MotionCrypt.decrypt(stateCommand.toString('hex'))}`)
       await this.#commandCharacteristic?.write(stateCommand)
-      this.refreshDisconnectTimer(Settings.DISCONNECT_TIME)
     
+    })
+
+    // Handle button pressed value changes
+    this.registerCapabilityListener(MotionCapability.FAVORITE, async (pressed: boolean) => {
+      await this.setCapabilityValue(MotionCapability.FAVORITE, false)
+      if (!await this.connect()) return
+      this.refreshDisconnectTimer(Settings.DISCONNECT_TIME)
+      await this.#commandCharacteristic?.write(MotionCommand.favorite())
     })
 
     // Handle speed value changes
     this.registerCapabilityListener(MotionCapability.SPEED_PICKER, async (key: string) => {
       if (!await this.connect()) return
+      this.refreshDisconnectTimer(Settings.DISCONNECT_TIME)
       const speed_level: MotionSpeedLevel = Number.parseInt(key)
       this.#commandCharacteristic?.write(MotionCommand.speed(speed_level))
-      this.refreshDisconnectTimer(Settings.DISCONNECT_TIME)
     })
 
     // Handle tilt slider value changes, value from 0.00 to 1.00
     this.registerCapabilityListener(MotionCapability.TILT_SLIDER, async (angle: number) => {
       if (!await this.connect()) return
+      this.refreshDisconnectTimer(Settings.DISCONNECT_TIME)
       angle = Math.round(180 * angle)
       this.log(angle)
       const tiltCommand: Buffer = MotionCommand.tilt(angle)
       await this.#commandCharacteristic?.write(tiltCommand)
-      this.refreshDisconnectTimer(10000)
     })
 
     const advertisement: BleAdvertisement = await this.homey.ble.find(this.#peripheralUUID, 5000)
@@ -182,6 +190,7 @@ class GenericDevice extends Homey.Device {
   async connect() {
     if (!this.isConnected())
       return await ConnectionQueue.waitForConnection(this)
+    this.refreshDisconnectTimer(Settings.DISCONNECT_TIME)
     return true
   }
 

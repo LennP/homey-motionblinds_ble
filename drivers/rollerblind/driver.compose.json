@@ -9,7 +9,8 @@
     "battery",
     "connected",
     "speed",
-    "rssi"
+    "rssi",
+    "favorite"
   ],
   "platforms": [
     "local",
