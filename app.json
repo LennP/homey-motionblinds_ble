@@ -206,7 +206,8 @@
         "windowcoverings_state",
         "battery",
         "connected",
-        "speed"
+        "speed",
+        "rssi"
       ],
       "platforms": [
         "local",
@@ -522,6 +523,16 @@
       "getable": true,
       "setable": true,
       "icon": "/assets/connected_capability.svg"
+    },
+    "rssi": {
+      "type": "string",
+      "title": {
+        "en": "RSSI"
+      },
+      "uiComponent": "sensor",
+      "getable": true,
+      "setable": true,
+      "icon": "/assets/rssi_capability.svg"
     },
     "speed": {
       "type": "enum",

@@ -6,39 +6,39 @@ import MotionNotification from '../notification'
 import MotionCrypt from '../crypt'
 import EventEmitter from 'events';
 
-class ConnectTask {
+class ConnectionQueue {
 
   static connectedEvent: EventEmitter | undefined
   static lastCallerTime: number | undefined
   static callers: number = 0
 
   static async waitForConnection(device: GenericDevice) {
-    ConnectTask.callers++
+    ConnectionQueue.callers++
     const callerTime = Date.now()
-    ConnectTask.lastCallerTime = callerTime
-    if (ConnectTask.connectedEvent == undefined) {
-      ConnectTask.connectedEvent = new EventEmitter()
+    ConnectionQueue.lastCallerTime = callerTime
+    if (ConnectionQueue.connectedEvent == undefined) {
+      ConnectionQueue.connectedEvent = new EventEmitter()
       
       device.log("First caller connecting")
       if (await device._connect()) {
-        ConnectTask.connectedEvent.emit("connected", true)
+        ConnectionQueue.connectedEvent.emit("connected", true)
       } else {
-        ConnectTask.connectedEvent.emit("connected", false)
+        ConnectionQueue.connectedEvent.emit("connected", false)
       }
       device.log("Done connecting!")
 
-      ConnectTask.callerDone(device)
+      ConnectionQueue.callerDone(device)
       
     } else {
       device.log("Already connecting, waiting for connection...")
       return new Promise((resolve) => {
-        ConnectTask.connectedEvent?.on("connected", (connected) => {
-          device.log(`Last caller ${ConnectTask.lastCallerTime}`)
+        ConnectionQueue.connectedEvent?.on("connected", (connected) => {
+          device.log(`Last caller ${ConnectionQueue.lastCallerTime}`)
           device.log(`Self caller ${callerTime}`)
-          const isLastCaller = ConnectTask.lastCallerTime == callerTime
+          const isLastCaller = ConnectionQueue.lastCallerTime == callerTime
           device.log("Last caller executing command")
           resolve(connected && isLastCaller)
-          ConnectTask.callerDone(device)
+          ConnectionQueue.callerDone(device)
         })
       })
     }
@@ -46,11 +46,11 @@ class ConnectTask {
   }
   
   static callerDone(device: GenericDevice) {
-    ConnectTask.callers--
-    device.log(ConnectTask.callers)
-    if (ConnectTask.callers == 0) {
-      ConnectTask.connectedEvent = undefined
-      ConnectTask.lastCallerTime = undefined
+    ConnectionQueue.callers--
+    device.log(ConnectionQueue.callers)
+    if (ConnectionQueue.callers == 0) {
+      ConnectionQueue.connectedEvent = undefined
+      ConnectionQueue.lastCallerTime = undefined
     }
   }
 }
@@ -75,11 +75,17 @@ class GenericDevice extends Homey.Device {
       await super.setCapabilityValue(capability, value)
   }
 
+  async onDiscoveryLastSeenChanged(discoveryResult: Homey.DiscoveryResult): Promise<void> {
+    this.log("Last seen!!")
+  }
+
   /**
   * onAdded is called when the user adds the device, called just after pairing.
   */
   async onAdded() {
     this.log(`${this.constructor.name} has been added`);
+    const advertisement: BleAdvertisement = await this.homey.ble.find(this.#peripheralUUID, 5000)
+    await this.setCapabilityValue(MotionCapability.RSSI, `${advertisement.rssi} dBm`)
   }
 
   /**
@@ -156,6 +162,9 @@ class GenericDevice extends Homey.Device {
       this.refreshDisconnectTimer(10000)
     })
 
+    const advertisement: BleAdvertisement = await this.homey.ble.find(this.#peripheralUUID, 5000)
+    await this.setCapabilityValue(MotionCapability.RSSI, `${advertisement.rssi} dBm`)
+
   }
 
   setIsConnecting(connecting: boolean) {
@@ -172,7 +181,7 @@ class GenericDevice extends Homey.Device {
 
   async connect() {
     if (!this.isConnected())
-      return await ConnectTask.waitForConnection(this)
+      return await ConnectionQueue.waitForConnection(this)
     return true
   }
 
@@ -182,6 +191,7 @@ class GenericDevice extends Homey.Device {
     try {
       this.log(`Finding device ${this.#peripheralUUID}...`)
       const advertisement: BleAdvertisement = await this.homey.ble.find(this.#peripheralUUID, 5000)
+      await this.setCapabilityValue(MotionCapability.RSSI, `${advertisement.rssi} dBm`)
 
       this.log('Connecting to device...')
       const peripheral: BlePeripheral = await advertisement.connect()

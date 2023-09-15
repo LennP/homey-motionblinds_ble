@@ -13,7 +13,8 @@ enum MotionCapability {
     BUTTONS =           "windowcoverings_state",
     BATTERY_SENSOR =    "battery",
     CONNECTED_SENSOR =  "connected",
-    SPEED_PICKER =      "speed"
+    SPEED_PICKER =      "speed",
+    RSSI =              "rssi"
 }
 
 enum MotionSpeedLevel {
