@@ -4,50 +4,37 @@ import { MotionSpeedLevel, MotionConnectionType, MotionService, MotionCharacteri
 import MotionCommand from '../command'
 import MotionNotification from '../notification'
 import MotionCrypt from '../crypt'
-import EventEmitter from 'events';
 
 class ConnectionQueue {
 
-  static connectedEvent: EventEmitter | undefined
-  static lastCallerTime: number | undefined
-  static callersWaiting: number = 0
+  static lastCallerResolve: ((lastCallerConnected: boolean) => void) | undefined | null;
 
   static async waitForConnection(device: GenericDevice) {
-    ConnectionQueue.callersWaiting++
-    const callerTime = Date.now()
-    ConnectionQueue.lastCallerTime = callerTime
-    if (ConnectionQueue.connectedEvent == undefined) {
-      ConnectionQueue.connectedEvent = new EventEmitter()
+    if (ConnectionQueue.lastCallerResolve === undefined) {
+      ConnectionQueue.lastCallerResolve = null
       
-      device.log("First caller connecting")
+      device.log("Connecting to motor...")
       const connected = await device._connect()
-      if (connected) {
-        ConnectionQueue.connectedEvent.emit("connected", true)
+      if (ConnectionQueue.lastCallerResolve) {
+        (ConnectionQueue.lastCallerResolve as (val: boolean) => void)(connected);
+        return false
       } else {
-        ConnectionQueue.connectedEvent.emit("connected", false)
+        return connected
       }
-      device.log("Done connecting!")
-      return ConnectionQueue.isLastCallerConnected(connected, callerTime)
       
     } else {
       device.log("Already connecting, waiting for connection...")
+      if (ConnectionQueue.lastCallerResolve)
+        ConnectionQueue.lastCallerResolve(false)
       return new Promise((resolve) => {
-        ConnectionQueue.connectedEvent?.on("connected", (connected: boolean) => {
-          resolve(ConnectionQueue.isLastCallerConnected(connected, callerTime))
-        })
+        ConnectionQueue.lastCallerResolve = function(lastCallerConnected: boolean) {
+          resolve(lastCallerConnected)
+          if (lastCallerConnected)
+            ConnectionQueue.lastCallerResolve = undefined
+        }
       })
     }
 
-  }
-
-  static isLastCallerConnected(connected: boolean, callerTime: number) {
-    ConnectionQueue.callersWaiting--
-    // Resets
-    if (ConnectionQueue.callersWaiting == 0) {
-      ConnectionQueue.connectedEvent = undefined
-      ConnectionQueue.lastCallerTime = undefined
-    }
-    return connected && ConnectionQueue.lastCallerTime == callerTime
   }
 
 }
@@ -93,7 +80,7 @@ class GenericDevice extends Homey.Device {
     this.registerCapabilityListener(MotionCapability.POSITION_SLIDER, async (position) => {
       if (!await this.connect()) return
       
-      position = Math.ceil(position * 100)
+      position = 100 - Math.ceil(position * 100)
       const percentageCommand: Buffer = MotionCommand.percentage(position)
       await this.#commandCharacteristic?.write(percentageCommand)
       this.log(position)
@@ -152,7 +139,7 @@ class GenericDevice extends Homey.Device {
     // Handle tilt slider value changes, value from 0.00 to 1.00
     this.registerCapabilityListener(MotionCapability.TILT_SLIDER, async (angle: number) => {
       if (!await this.connect()) return
-      angle = Math.round(180 * angle)
+      angle = 180 - Math.round(180 * angle)
       this.log(angle)
       const tiltCommand: Buffer = MotionCommand.tilt(angle)
       await this.#commandCharacteristic?.write(tiltCommand)
@@ -226,8 +213,8 @@ class GenericDevice extends Homey.Device {
       this.log(decryptedNotificationString)
       const decryptedNotificationBuffer: Buffer = MotionNotification._decrypt(notificationBuffer)
       if (decryptedNotificationString.startsWith(MotionNotificationType.PERCENT)) {
-        const position: number = decryptedNotificationBuffer[6] / 100
-        const angle = Math.round((decryptedNotificationBuffer[7] / 180) * 100) / 100
+        const position: number = 1 - decryptedNotificationBuffer[6] / 100
+        const angle = 1 - Math.round((decryptedNotificationBuffer[7] / 180) * 100) / 100
 
         this.log(`Percentage: ${position}`)
         this.log(`Angle: ${angle}`)
