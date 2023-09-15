@@ -40,7 +40,9 @@
         "windowcoverings_set",
         "windowcoverings_state",
         "battery",
-        "connected"
+        "connected",
+        "rssi",
+        "favorite"
       ],
       "platforms": [
         "local",
@@ -94,8 +96,12 @@
       "capabilities": [
         "windowcoverings_set",
         "windowcoverings_state",
+        "windowcoverings_tilt_set",
         "battery",
-        "connected"
+        "connected",
+        "speed",
+        "rssi",
+        "favorite"
       ],
       "platforms": [
         "local",
@@ -150,7 +156,10 @@
         "windowcoverings_set",
         "windowcoverings_state",
         "battery",
-        "connected"
+        "connected",
+        "speed",
+        "rssi",
+        "favorite"
       ],
       "platforms": [
         "local",
@@ -263,7 +272,10 @@
         "windowcoverings_set",
         "windowcoverings_state",
         "battery",
-        "connected"
+        "connected",
+        "speed",
+        "rssi",
+        "favorite"
       ],
       "platforms": [
         "local",
@@ -319,7 +331,10 @@
         "windowcoverings_state",
         "windowcoverings_tilt_set",
         "battery",
-        "connected"
+        "connected",
+        "speed",
+        "rssi",
+        "favorite"
       ],
       "platforms": [
         "local",
@@ -375,7 +390,10 @@
         "windowcoverings_state",
         "windowcoverings_tilt_set",
         "battery",
-        "connected"
+        "connected",
+        "speed",
+        "rssi",
+        "favorite"
       ],
       "platforms": [
         "local",
@@ -431,7 +449,9 @@
         "windowcoverings_state",
         "windowcoverings_tilt_set",
         "battery",
-        "connected"
+        "connected",
+        "rssi",
+        "favorite"
       ],
       "platforms": [
         "local",

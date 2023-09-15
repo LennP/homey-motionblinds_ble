@@ -6,8 +6,12 @@
   "capabilities": [
     "windowcoverings_set",
     "windowcoverings_state",
+    "windowcoverings_tilt_set",
     "battery",
-    "connected"
+    "connected",
+    "speed",
+    "rssi",
+    "favorite"
   ],
   "platforms": [
     "local",

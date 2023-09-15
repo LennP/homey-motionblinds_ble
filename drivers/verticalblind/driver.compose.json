@@ -8,7 +8,9 @@
     "windowcoverings_state",
     "windowcoverings_tilt_set",
     "battery",
-    "connected"
+    "connected",
+    "rssi",
+    "favorite"
   ],
   "platforms": [
     "local",

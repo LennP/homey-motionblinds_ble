@@ -1,9 +1,11 @@
 // Settings for application
 enum Setting {
     
-    DISCOVER_TIME = 20,          // Time in seconds used to discover devices
-    DISCOVER_ITERATIONS = 1,    // 
-    DISCONNECT_TIME = 15        // Time in seconds before the device is disconnected
+    DISCOVER_TIME = 20,         // Time in seconds used to discover devices
+    DISCOVER_ITERATIONS = 1,    // The number of iterations used to discover devices
+    DISCONNECT_TIME = 15,       // Time in seconds before the device is disconnected
+    UPDATE_INTERVAL = 10,       // Time in seconds after which RSSI is updated
+    FIND_TIME = 10,             // Time in seconds used to search for a device
 
 }
 

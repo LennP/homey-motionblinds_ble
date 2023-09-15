@@ -7,7 +7,10 @@
     "windowcoverings_set",
     "windowcoverings_state",
     "battery",
-    "connected"
+    "connected",
+    "speed",
+    "rssi",
+    "favorite"
   ],
   "platforms": [
     "local",

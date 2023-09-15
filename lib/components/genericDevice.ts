@@ -1,9 +1,10 @@
 import Homey, { BleAdvertisement, BlePeripheral, BleService, BleCharacteristic } from 'homey';
 
-import { MotionSpeedLevel, MotionConnectionType, MotionService, MotionCharacteristic, MotionNotificationType, Settings, MotionCapability } from '../const'
+import { MotionSpeedLevel, MotionConnectionType, MotionService, MotionCharacteristic, MotionNotificationType, Settings as Setting, MotionCapability } from '../const'
 import MotionCommand from '../command'
 import MotionNotification from '../notification'
 import MotionCrypt from '../crypt'
+import { Advertisement } from 'homey/lib/BlePeripheral';
 
 class ConnectionQueue {
 
@@ -44,6 +45,7 @@ class GenericDevice extends Homey.Device {
 
   #peripheralUUID: string = this.getData().uuid
   #connecting: boolean = false
+  #updateInterval: NodeJS.Timer | undefined
   #disconnectTimerID: NodeJS.Timeout | undefined
   #commandCharacteristic: BleCharacteristic | undefined
   #notificationCharacteristic: BleCharacteristic | undefined
@@ -64,9 +66,8 @@ class GenericDevice extends Homey.Device {
   * onAdded is called when the user adds the device, called just after pairing.
   */
   async onAdded() {
-    this.log(`${this.constructor.name} has been added`);
-    const advertisement: BleAdvertisement = await this.homey.ble.find(this.#peripheralUUID, 5000)
-    await this.setCapabilityValue(MotionCapability.RSSI, `${advertisement.rssi} dBm`)
+    this.log(`${this.constructor.name} (${this.#peripheralUUID}) has been added`);
+    this.handleLatestAdvertisement()
   }
 
   /**
@@ -146,9 +147,22 @@ class GenericDevice extends Homey.Device {
       await this.#commandCharacteristic?.write(tiltCommand)
     })
 
-    const advertisement: BleAdvertisement = await this.homey.ble.find(this.#peripheralUUID, 5000)
-    await this.setCapabilityValue(MotionCapability.RSSI, `${advertisement.rssi} dBm`)
+    await this.handleLatestAdvertisement()
 
+    this.#updateInterval = setInterval(async () => {
+      await this.handleLatestAdvertisement()
+    }, Setting.UPDATE_INTERVAL * 1000)
+
+  }
+
+  async handleLatestAdvertisement(advertisement: BleAdvertisement | null = null): Promise<BleAdvertisement | null> {
+    try {
+      advertisement = advertisement ? advertisement : await this.homey.ble.find(this.#peripheralUUID, Setting.FIND_TIME)
+      await this.setCapabilityValue(MotionCapability.RSSI, `${advertisement.rssi} dBm`)
+    } catch (e) {
+      await this.setCapabilityValue(MotionCapability.RSSI, `Not found`)
+    }
+    return advertisement
   }
 
   setIsConnecting(connecting: boolean) {
@@ -166,7 +180,7 @@ class GenericDevice extends Homey.Device {
   async connect() {
     if (!this.isConnected())
       return await ConnectionQueue.waitForConnection(this)
-    this.refreshDisconnectTimer(Settings.DISCONNECT_TIME)
+    this.refreshDisconnectTimer(Setting.DISCONNECT_TIME)
     return true
   }
 
@@ -175,13 +189,11 @@ class GenericDevice extends Homey.Device {
     this.setIsConnecting(true)
     try {
       this.log(`Finding device ${this.#peripheralUUID}...`)
-      const advertisement: BleAdvertisement = await this.homey.ble.find(this.#peripheralUUID, 5000)
+      const advertisement: BleAdvertisement = await this.homey.ble.find(this.#peripheralUUID, Setting.FIND_TIME)
       await this.setCapabilityValue(MotionCapability.RSSI, `${advertisement.rssi} dBm`)
 
       this.log('Connecting to device...')
       const peripheral: BlePeripheral = await advertisement.connect()
-      await this.setCapabilityValue(MotionCapability.CONNECTED_SENSOR, MotionConnectionType.CONNECTED)
-
       this.log('Getting service...')
       // this.log(await peripheral.discoverAllServicesAndCharacteristics())
       const service: BleService = await peripheral.getService(MotionService.CONTROL)
@@ -189,13 +201,14 @@ class GenericDevice extends Homey.Device {
       this.#commandCharacteristic = await service.getCharacteristic(MotionCharacteristic.COMMAND)
       this.#notificationCharacteristic = await service.getCharacteristic(MotionCharacteristic.NOTIFICATION)
       this.log("Subscribing to notifications...")
+      await this.setCapabilityValue(MotionCapability.CONNECTED_SENSOR, MotionConnectionType.CONNECTED)
       await this.#notificationCharacteristic?.subscribeToNotifications(((notification: Buffer) => this.notificationHandler(notification)).bind(this))
       this.log("Setting user key...")
       const userKeyCommand: Buffer = MotionCommand.setKey()
       await this.#commandCharacteristic.write(userKeyCommand)
       const statusQueryCommand: Buffer = MotionCommand.statusQuery()
       await this.#commandCharacteristic.write(statusQueryCommand)
-      this.refreshDisconnectTimer(Settings.DISCONNECT_TIME)
+      this.refreshDisconnectTimer(Setting.DISCONNECT_TIME)
       this.log("Ready to send command")
       this.setIsConnecting(false)
       return true
@@ -271,7 +284,7 @@ class GenericDevice extends Homey.Device {
     newSettings: { [key: string]: boolean | string | number | undefined | null };
     changedKeys: string[];
   }): Promise<string | void> {
-    this.log("GenericDevice settings where changed");
+    this.log(`${this.constructor.name} (${this.#peripheralUUID}) settings where changed`);
   }
 
   /**
@@ -280,14 +293,18 @@ class GenericDevice extends Homey.Device {
    * @param {string} name The new name
    */
   async onRenamed(name: string) {
-    this.log('GenericDevice was renamed');
+    this.log(`${this.constructor.name} (${this.#peripheralUUID}) was renamed`);
   }
 
   /**
    * onDeleted is called when the user deleted the device.
    */
   async onDeleted() {
-    this.log('GenericDevice has been deleted');
+    this.log(`${this.constructor.name} (${this.#peripheralUUID}) has been deleted`);
+    if (this.#updateInterval) {
+      clearInterval(this.#updateInterval)
+      this.#updateInterval = undefined
+    }
   }
 
 }
