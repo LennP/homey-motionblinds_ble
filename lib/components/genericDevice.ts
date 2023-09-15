@@ -10,49 +10,46 @@ class ConnectionQueue {
 
   static connectedEvent: EventEmitter | undefined
   static lastCallerTime: number | undefined
-  static callers: number = 0
+  static callersWaiting: number = 0
 
   static async waitForConnection(device: GenericDevice) {
-    ConnectionQueue.callers++
+    ConnectionQueue.callersWaiting++
     const callerTime = Date.now()
     ConnectionQueue.lastCallerTime = callerTime
     if (ConnectionQueue.connectedEvent == undefined) {
       ConnectionQueue.connectedEvent = new EventEmitter()
       
       device.log("First caller connecting")
-      if (await device._connect()) {
+      const connected = await device._connect()
+      if (connected) {
         ConnectionQueue.connectedEvent.emit("connected", true)
       } else {
         ConnectionQueue.connectedEvent.emit("connected", false)
       }
       device.log("Done connecting!")
-
-      ConnectionQueue.callerDone(device)
+      return ConnectionQueue.isLastCallerConnected(connected, callerTime)
       
     } else {
       device.log("Already connecting, waiting for connection...")
       return new Promise((resolve) => {
-        ConnectionQueue.connectedEvent?.on("connected", (connected) => {
-          device.log(`Last caller ${ConnectionQueue.lastCallerTime}`)
-          device.log(`Self caller ${callerTime}`)
-          const isLastCaller = ConnectionQueue.lastCallerTime == callerTime
-          device.log("Last caller executing command")
-          resolve(connected && isLastCaller)
-          ConnectionQueue.callerDone(device)
+        ConnectionQueue.connectedEvent?.on("connected", (connected: boolean) => {
+          resolve(ConnectionQueue.isLastCallerConnected(connected, callerTime))
         })
       })
     }
 
   }
-  
-  static callerDone(device: GenericDevice) {
-    ConnectionQueue.callers--
-    device.log(ConnectionQueue.callers)
-    if (ConnectionQueue.callers == 0) {
+
+  static isLastCallerConnected(connected: boolean, callerTime: number) {
+    ConnectionQueue.callersWaiting--
+    // Resets
+    if (ConnectionQueue.callersWaiting == 0) {
       ConnectionQueue.connectedEvent = undefined
       ConnectionQueue.lastCallerTime = undefined
     }
+    return connected && ConnectionQueue.lastCallerTime == callerTime
   }
+
 }
 
 class GenericDevice extends Homey.Device {
@@ -75,10 +72,6 @@ class GenericDevice extends Homey.Device {
       await super.setCapabilityValue(capability, value)
   }
 
-  async onDiscoveryLastSeenChanged(discoveryResult: Homey.DiscoveryResult): Promise<void> {
-    this.log("Last seen!!")
-  }
-
   /**
   * onAdded is called when the user adds the device, called just after pairing.
   */
@@ -99,7 +92,6 @@ class GenericDevice extends Homey.Device {
     // Handle slider value changes, value from 0.00 to 1.00
     this.registerCapabilityListener(MotionCapability.POSITION_SLIDER, async (position) => {
       if (!await this.connect()) return
-      this.refreshDisconnectTimer(Settings.DISCONNECT_TIME)
       
       position = Math.ceil(position * 100)
       const percentageCommand: Buffer = MotionCommand.percentage(position)
@@ -110,7 +102,6 @@ class GenericDevice extends Homey.Device {
     // Handle button clicks, strings: up, idle, down
     this.registerCapabilityListener(MotionCapability.BUTTONS, async (state) => {
       if (!await this.connect()) return
-      this.refreshDisconnectTimer(Settings.DISCONNECT_TIME)
     
       let stateCommand: Buffer = Buffer.from('')
       switch(state) {
@@ -148,14 +139,12 @@ class GenericDevice extends Homey.Device {
     this.registerCapabilityListener(MotionCapability.FAVORITE, async (pressed: boolean) => {
       await this.setCapabilityValue(MotionCapability.FAVORITE, false)
       if (!await this.connect()) return
-      this.refreshDisconnectTimer(Settings.DISCONNECT_TIME)
       await this.#commandCharacteristic?.write(MotionCommand.favorite())
     })
 
     // Handle speed value changes
     this.registerCapabilityListener(MotionCapability.SPEED_PICKER, async (key: string) => {
       if (!await this.connect()) return
-      this.refreshDisconnectTimer(Settings.DISCONNECT_TIME)
       const speed_level: MotionSpeedLevel = Number.parseInt(key)
       this.#commandCharacteristic?.write(MotionCommand.speed(speed_level))
     })
@@ -163,7 +152,6 @@ class GenericDevice extends Homey.Device {
     // Handle tilt slider value changes, value from 0.00 to 1.00
     this.registerCapabilityListener(MotionCapability.TILT_SLIDER, async (angle: number) => {
       if (!await this.connect()) return
-      this.refreshDisconnectTimer(Settings.DISCONNECT_TIME)
       angle = Math.round(180 * angle)
       this.log(angle)
       const tiltCommand: Buffer = MotionCommand.tilt(angle)
