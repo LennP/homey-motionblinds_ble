@@ -19,6 +19,7 @@ class ConnectionQueue {
         (ConnectionQueue.lastCallerResolve as (val: boolean) => void)(connected);
         return false
       } else {
+        ConnectionQueue.lastCallerResolve = undefined
         return connected
       }
       
