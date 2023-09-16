@@ -10,6 +10,8 @@
     "connected",
     "speed",
     "rssi",
+    "disconnect",
+    "connect",
     "favorite"
   ],
   "platforms": [

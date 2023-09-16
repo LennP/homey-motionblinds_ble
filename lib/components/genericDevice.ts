@@ -165,6 +165,18 @@ class GenericDevice extends Homey.Device {
     })
 
     // Handle button pressed value changes
+    this.registerCapabilityListener(MotionCapability.DISCONNECT, async (pressed: boolean) => {
+      await this.setCapabilityValue(MotionCapability.DISCONNECT, false)
+      await this.disconnect()
+    })
+
+    // Handle button pressed value changes
+    this.registerCapabilityListener(MotionCapability.CONNECT, async (pressed: boolean) => {
+      await this.setCapabilityValue(MotionCapability.CONNECT, false)
+      await this.connect()
+    })
+
+    // Handle button pressed value changes
     this.registerCapabilityListener(MotionCapability.FAVORITE, async (pressed: boolean) => {
       await this.setCapabilityValue(MotionCapability.FAVORITE, false)
       await this.connect()

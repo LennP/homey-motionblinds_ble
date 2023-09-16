@@ -42,8 +42,10 @@
         "battery",
         "connected",
         "rssi",
-        "favorite",
-        "calibrated"
+        "calibrated",
+        "disconnect",
+        "connect",
+        "favorite"
       ],
       "platforms": [
         "local",
@@ -102,6 +104,8 @@
         "connected",
         "speed",
         "rssi",
+        "disconnect",
+        "connect",
         "favorite"
       ],
       "platforms": [
@@ -160,6 +164,8 @@
         "connected",
         "speed",
         "rssi",
+        "disconnect",
+        "connect",
         "favorite"
       ],
       "platforms": [
@@ -218,6 +224,8 @@
         "connected",
         "speed",
         "rssi",
+        "disconnect",
+        "connect",
         "favorite"
       ],
       "platforms": [
@@ -276,6 +284,8 @@
         "connected",
         "speed",
         "rssi",
+        "disconnect",
+        "connect",
         "favorite"
       ],
       "platforms": [
@@ -335,6 +345,8 @@
         "connected",
         "speed",
         "rssi",
+        "disconnect",
+        "connect",
         "favorite"
       ],
       "platforms": [
@@ -394,6 +406,8 @@
         "connected",
         "speed",
         "rssi",
+        "disconnect",
+        "connect",
         "favorite"
       ],
       "platforms": [
@@ -452,8 +466,10 @@
         "battery",
         "connected",
         "rssi",
-        "favorite",
-        "calibrated"
+        "calibrated",
+        "disconnect",
+        "connect",
+        "favorite"
       ],
       "platforms": [
         "local",
@@ -541,6 +557,16 @@
       "setable": true,
       "icon": "/assets/calibrated_capability.svg"
     },
+    "connect": {
+      "type": "boolean",
+      "title": {
+        "en": "Connect"
+      },
+      "uiComponent": "button",
+      "getable": true,
+      "setable": true,
+      "icon": "/assets/connect_capability.svg"
+    },
     "connected": {
       "type": "enum",
       "title": {
@@ -576,6 +602,16 @@
       "getable": true,
       "setable": true,
       "icon": "/assets/connected_capability.svg"
+    },
+    "disconnect": {
+      "type": "boolean",
+      "title": {
+        "en": "Disconnect"
+      },
+      "uiComponent": "button",
+      "getable": true,
+      "setable": true,
+      "icon": "/assets/disconnect_capability.svg"
     },
     "favorite": {
       "type": "boolean",

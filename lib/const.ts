@@ -19,7 +19,9 @@ enum MotionCapability {
     CONNECTED_SENSOR =  "connected",
     SPEED_PICKER =      "speed",
     RSSI =              "rssi",
-    CALIBRATED =        "calibrated"
+    CALIBRATED =        "calibrated",
+    DISCONNECT =        "disconnect",
+    CONNECT =           "connect"
 }
 
 enum MotionSpeedLevel {

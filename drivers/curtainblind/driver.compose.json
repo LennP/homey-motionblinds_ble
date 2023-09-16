@@ -9,8 +9,10 @@
     "battery",
     "connected",
     "rssi",
-    "favorite",
-    "calibrated"
+    "calibrated",
+    "disconnect",
+    "connect",
+    "favorite"
   ],
   "platforms": [
     "local",
