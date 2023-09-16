@@ -6,6 +6,7 @@ enum Setting {
     DISCONNECT_TIME = 15,       // Time in seconds before the device is disconnected
     UPDATE_INTERVAL = 10,       // Time in seconds after which RSSI is updated
     FIND_TIME = 10,             // Time in seconds used to search for a device
+    CALIBRATION_TIME = 45       // Time in seconds used for calibration of curtain device
 
 }
 
@@ -17,13 +18,20 @@ enum MotionCapability {
     BATTERY_SENSOR =    "battery",
     CONNECTED_SENSOR =  "connected",
     SPEED_PICKER =      "speed",
-    RSSI =              "rssi"
+    RSSI =              "rssi",
+    CALIBRATED =        "calibrated"
 }
 
 enum MotionSpeedLevel {
     LOW =       1,
     MEDIUM =    2,
     HIGH =      3
+}
+
+enum MotionCalibrationType {
+    CALIBRATED = "calibrated",
+    UNCALIBRATED = "uncalibrated",
+    CALIBRATING = "calibrating",
 }
 
 enum MotionConnectionType {
@@ -67,7 +75,7 @@ enum MotionCommandType {
 
 enum MotionNotificationType {
     PERCENT =       "07040402",
-    FIRST_CHECK =   "12040f02"
+    STATUS =   "12040f02"
 }
 
-export {MotionCapability, MotionSpeedLevel, MotionConnectionType, MotionBlindType, MotionService, MotionCharacteristic, MotionCommandType, MotionNotificationType, Setting as Settings}
+export {MotionCapability, MotionSpeedLevel, MotionCalibrationType, MotionConnectionType, MotionBlindType, MotionService, MotionCharacteristic, MotionCommandType, MotionNotificationType, Setting as Settings}

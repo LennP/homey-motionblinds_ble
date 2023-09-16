@@ -1,26 +1,54 @@
 import Homey, { BleAdvertisement, BlePeripheral, BleService, BleCharacteristic } from 'homey';
 
-import { MotionSpeedLevel, MotionConnectionType, MotionService, MotionCharacteristic, MotionNotificationType, Settings as Setting, MotionCapability } from '../const'
+import { MotionCalibrationType, MotionSpeedLevel, MotionConnectionType, MotionService, MotionCharacteristic, MotionNotificationType, Settings as Setting, MotionCapability } from '../const'
 import MotionCommand from '../command'
 import MotionNotification from '../notification'
 import MotionCrypt from '../crypt'
+
+class MotionPositionInfo {
+
+  up: boolean
+  down: boolean
+  favorite: boolean
+  
+  constructor(endPositionByte: number, favoriteBytes: number) {
+    this.up = Boolean(endPositionByte & 0x08)
+    this.down = Boolean(endPositionByte & 0x04)
+    this.favorite = Boolean((favoriteBytes & 0xFF00) != 0x00 || (favoriteBytes & 0x00FF))
+  }
+
+  updateEndPositions(endPositionByte: number): void {
+    this.up = Boolean(endPositionByte & 0x08)
+    this.down = Boolean(endPositionByte & 0x04)
+  }
+}
 
 class ConnectionQueue {
 
   #lastCallerResolve: ((lastCallerConnected: boolean) => void) | undefined | null;
 
-  async waitForConnection(device: GenericDevice) {
+  async waitForConnection(device: GenericDevice): Promise<boolean> {
     if (this.#lastCallerResolve === undefined) {
       this.#lastCallerResolve = null
       
       device.log("Connecting to motor...")
-      const connected = await device._connect()
-      if (this.#lastCallerResolve) {
-        (this.#lastCallerResolve as (val: boolean) => void)(connected);
-        return false
-      } else {
+      try {
+        await device.establish_connection()
+
+        if (this.#lastCallerResolve) {
+          (this.#lastCallerResolve as (val: boolean) => void)(true);
+          return false
+        } else {
+          this.#lastCallerResolve = undefined
+          return true
+        }
+      } catch (e) {
+
+        if (this.#lastCallerResolve) {
+          (this.#lastCallerResolve as (val: boolean) => void)(false);
+        }
         this.#lastCallerResolve = undefined
-        return connected
+        throw e
       }
       
     } else {
@@ -46,9 +74,15 @@ class GenericDevice extends Homey.Device {
   #connecting: boolean = false
   #updateInterval: NodeJS.Timer | undefined
   #disconnectTimerID: NodeJS.Timeout | undefined
+  #disconnectTime: number | undefined
   #commandCharacteristic: BleCharacteristic | undefined
   #notificationCharacteristic: BleCharacteristic | undefined
   #connectionQueue: ConnectionQueue = new ConnectionQueue()
+
+  #calibrationType: MotionCalibrationType | undefined
+
+  #endPositionInfo: MotionPositionInfo | undefined
+  #foundEndPositionsCallback: Function | undefined
 
   #lastIdleClickTime: number = 0
 
@@ -65,7 +99,7 @@ class GenericDevice extends Homey.Device {
   /**
   * onAdded is called when the user adds the device, called just after pairing.
   */
-  async onAdded() {
+  async onAdded(): Promise<void> {
     this.log(`${this.constructor.name} (${this.#peripheralUUID}) has been added`);
     this.handleLatestAdvertisement()
   }
@@ -73,14 +107,16 @@ class GenericDevice extends Homey.Device {
   /**
    * onInit is called when the device is initialized.
    */
-  async onInit() {
+  async onInit(): Promise<void> {
     this.log(`${this.constructor.name} (${this.#peripheralUUID}) has been initialized`);
     await this.setCapabilityValue(MotionCapability.CONNECTED_SENSOR, MotionConnectionType.DISCONNECTED)
     await this.setCapabilityValue(MotionCapability.SPEED_PICKER, null)
+    await this.setCapabilityValue(MotionCapability.CALIBRATED, null)
 
     // Handle slider value changes, value from 0.00 to 1.00
     this.registerCapabilityListener(MotionCapability.POSITION_SLIDER, async (position) => {
-      if (!await this.connect()) return
+      await this.connect()
+      await this.handleEndPositions()
       
       position = 100 - Math.ceil(position * 100)
       const percentageCommand: Buffer = MotionCommand.percentage(position)
@@ -90,11 +126,12 @@ class GenericDevice extends Homey.Device {
 
     // Handle button clicks, strings: up, idle, down
     this.registerCapabilityListener(MotionCapability.BUTTONS, async (state) => {
-      if (!await this.connect()) return
+      await this.connect()
     
       let stateCommand: Buffer = Buffer.from('')
       switch(state) {
         case "up": {
+          await this.handleEndPositions()
           stateCommand = MotionCommand.up()
           break
         }
@@ -102,6 +139,8 @@ class GenericDevice extends Homey.Device {
           const currentIdleClickTime = Date.now()
           if (this.#lastIdleClickTime != undefined && currentIdleClickTime - this.#lastIdleClickTime < 500) {
             this.#lastIdleClickTime = 0
+            await this.handleEndPositions()
+            await this.handleFavoritePosition()
             stateCommand = MotionCommand.favorite()
           } else {
             this.#lastIdleClickTime = currentIdleClickTime
@@ -110,6 +149,7 @@ class GenericDevice extends Homey.Device {
           break
         }
         case "down": {
+          await this.handleEndPositions()
           stateCommand = MotionCommand.down()
           break
         }
@@ -127,20 +167,24 @@ class GenericDevice extends Homey.Device {
     // Handle button pressed value changes
     this.registerCapabilityListener(MotionCapability.FAVORITE, async (pressed: boolean) => {
       await this.setCapabilityValue(MotionCapability.FAVORITE, false)
-      if (!await this.connect()) return
+      await this.connect()
+      await this.handleEndPositions()
       await this.#commandCharacteristic?.write(MotionCommand.favorite())
     })
 
     // Handle speed value changes
     this.registerCapabilityListener(MotionCapability.SPEED_PICKER, async (key: string) => {
-      if (!await this.connect()) return
+      await this.connect()
+      await this.handleEndPositions()
+      await this.handleFavoritePosition()
       const speed_level: MotionSpeedLevel = Number.parseInt(key)
       this.#commandCharacteristic?.write(MotionCommand.speed(speed_level))
     })
 
     // Handle tilt slider value changes, value from 0.00 to 1.00
     this.registerCapabilityListener(MotionCapability.TILT_SLIDER, async (angle: number) => {
-      if (!await this.connect()) return
+      await this.connect()
+      await this.handleEndPositions()
       angle = 180 - Math.round(180 * angle)
       this.log(angle)
       const tiltCommand: Buffer = MotionCommand.tilt(angle)
@@ -156,6 +200,50 @@ class GenericDevice extends Homey.Device {
 
   }
 
+  async waitForEndPositionInfo(): Promise<void> {
+    if (!this.#endPositionInfo)
+      await new Promise<void>(((resolve: Function) => {
+        this.#foundEndPositionsCallback = (() => {
+          resolve()
+          this.#foundEndPositionsCallback = undefined
+        })
+      }))
+  }
+
+
+  async handleFavoritePosition(): Promise<void> {
+
+    await this.waitForEndPositionInfo()
+
+    if (!this.#endPositionInfo?.favorite)
+      throw new Error(`${this.getName()}'s favorite position needs to be set before usage of this command.`)
+
+  }
+
+  async handleEndPositions(): Promise<void> {
+
+    await this.waitForEndPositionInfo()
+
+    if (this.constructor.name == "CurtainBlindDevice") {
+      if (!this.#endPositionInfo?.up) {
+        this.log("Calibrating...")
+        this.#calibrationType = MotionCalibrationType.CALIBRATING
+        this.setCapabilityValue(MotionCapability.CALIBRATED, MotionCalibrationType.CALIBRATING)
+        this.refreshDisconnectTimer(Setting.CALIBRATION_TIME)
+        // Continue with command
+      }
+    } else if (this.constructor.name == "VerticalBlindDevice") {
+      if (!this.#endPositionInfo?.up)
+        this.#calibrationType = MotionCalibrationType.UNCALIBRATED
+        this.setCapabilityValue(MotionCapability.CALIBRATED, MotionCalibrationType.UNCALIBRATED)
+        throw new Error(`${this.getName()} needs to be calibrated using the MotionBlinds BLE app before usage.`)
+    } else {
+      if (!this.#endPositionInfo?.up)
+        throw new Error(`${this.getName()}'s end positions need to be set before usage of this command.`)
+    }
+    
+  }
+
   async handleLatestAdvertisement(advertisement: BleAdvertisement | null = null): Promise<BleAdvertisement | null> {
     try {
       advertisement = advertisement ? advertisement : await this.homey.ble.find(this.#peripheralUUID, Setting.FIND_TIME)
@@ -166,7 +254,7 @@ class GenericDevice extends Homey.Device {
     return advertisement
   }
 
-  setIsConnecting(connecting: boolean) {
+  setIsConnecting(connecting: boolean): void {
     this.#connecting = connecting
   }
 
@@ -178,17 +266,16 @@ class GenericDevice extends Homey.Device {
     return this.#commandCharacteristic != undefined && this.#commandCharacteristic.service.peripheral.isConnected
   }
 
-  async connect() {
+  async connect(): Promise<void> {
     if (!this.isConnected())
-      return await this.#connectionQueue.waitForConnection(this)
+      await this.#connectionQueue.waitForConnection(this)
     this.refreshDisconnectTimer(Setting.DISCONNECT_TIME)
-    return true
   }
 
-  async _connect(): Promise<boolean> {
-    await this.setCapabilityValue(MotionCapability.CONNECTED_SENSOR, MotionConnectionType.CONNECTING)
-    this.setIsConnecting(true)
+  async establish_connection(): Promise<void> {
     try {
+      await this.setCapabilityValue(MotionCapability.CONNECTED_SENSOR, MotionConnectionType.CONNECTING)
+      this.setIsConnecting(true)
       this.log(`Finding device ${this.#peripheralUUID}...`)
       const advertisement: BleAdvertisement = await this.homey.ble.find(this.#peripheralUUID, Setting.FIND_TIME)
       await this.setCapabilityValue(MotionCapability.RSSI, `${advertisement.rssi} dBm`)
@@ -212,16 +299,14 @@ class GenericDevice extends Homey.Device {
       this.refreshDisconnectTimer(Setting.DISCONNECT_TIME)
       this.log("Ready to send command")
       this.setIsConnecting(false)
-      return true
 
     } catch (e) {
       await this.setCapabilityValue(MotionCapability.CONNECTED_SENSOR, MotionConnectionType.DISCONNECTED)
-      this.log(e)
-      return false
+      throw e
     }
   }
 
-  async notificationHandler(notificationBuffer: Buffer) {
+  async notificationHandler(notificationBuffer: Buffer): Promise<void> {
     if (notificationBuffer.length % 16 == 0) {
       this.log("Received encrypted notification.")
       const decryptedNotificationString: string = MotionNotification._decode_decrypt(notificationBuffer)
@@ -231,11 +316,19 @@ class GenericDevice extends Homey.Device {
         const position: number = 1 - decryptedNotificationBuffer[6] / 100
         const angle = 1 - Math.round((decryptedNotificationBuffer[7] / 180) * 100) / 100
 
+        this.#endPositionInfo?.updateEndPositions(decryptedNotificationBuffer[4])
+        if (this.#endPositionInfo && this.#endPositionInfo.up) {
+          if (this.#calibrationType && this.#calibrationType == MotionCalibrationType.CALIBRATING)
+            this.refreshDisconnectTimer(Setting.DISCONNECT_TIME, true)
+          this.#calibrationType = MotionCalibrationType.CALIBRATED
+          this.setCapabilityValue(MotionCapability.CALIBRATED, MotionCalibrationType.CALIBRATED)
+        }
+
         this.log(`Percentage: ${position}`)
         this.log(`Angle: ${angle}`)
         await this.setCapabilityValue(MotionCapability.POSITION_SLIDER, position)
         await this.setCapabilityValue(MotionCapability.TILT_SLIDER, angle)
-      } else if (decryptedNotificationString.startsWith(MotionNotificationType.FIRST_CHECK)) {
+      } else if (decryptedNotificationString.startsWith(MotionNotificationType.STATUS)) {
         const position: number = decryptedNotificationBuffer[6] / 100
         const angle = Math.round((decryptedNotificationBuffer[7] / 180) * 100) / 100
         const speedLevel = decryptedNotificationBuffer[12]
@@ -247,24 +340,36 @@ class GenericDevice extends Homey.Device {
         } catch (e) {
           this.log(`Invalid speed level: ${speedLevel}`)
         }
+        this.#endPositionInfo = new MotionPositionInfo(decryptedNotificationBuffer[4], (decryptedNotificationBuffer[6] << 8) | decryptedNotificationBuffer[7])
+        if (this.#foundEndPositionsCallback)
+          this.#foundEndPositionsCallback()
       }
     } else {
       this.error(`Unknown message ${notificationBuffer}`)
     }
   }
 
-  refreshDisconnectTimer(time: number) {
+  refreshDisconnectTimer(time: number, force: boolean = false): void {
+    // Check if disconnect time is not smaller than existing disconnect time
+    const newDisconnectTime = Date.now() + time * 1000
+    if ((this.#disconnectTime && this.#disconnectTime > newDisconnectTime) && !force)
+      return
+    this.#disconnectTime = newDisconnectTime
+
     // Delete previous timer
     if (this.#disconnectTimerID)
       clearTimeout(this.#disconnectTimerID)
     
     this.#disconnectTimerID = setTimeout((async () => {
-        await this.setCapabilityValue(MotionCapability.CONNECTED_SENSOR, MotionConnectionType.DISCONNECTED)
         await this.disconnect()
     }).bind(this), time * 1000)
   }
 
   async disconnect() {
+    this.log(`Disconnecting after ${Setting.DISCONNECT_TIME}s`)
+    await this.setCapabilityValue(MotionCapability.CONNECTED_SENSOR, MotionConnectionType.DISCONNECTED)
+    await this.setCapabilityValue(MotionCapability.CALIBRATED, null)
+    this.#calibrationType = undefined
     await this.#commandCharacteristic?.service.peripheral.disconnect()
   }
 

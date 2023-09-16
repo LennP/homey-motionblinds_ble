@@ -42,7 +42,8 @@
         "battery",
         "connected",
         "rssi",
-        "favorite"
+        "favorite",
+        "calibrated"
       ],
       "platforms": [
         "local",
@@ -451,7 +452,8 @@
         "battery",
         "connected",
         "rssi",
-        "favorite"
+        "favorite",
+        "calibrated"
       ],
       "platforms": [
         "local",
@@ -508,6 +510,36 @@
       "getable": true,
       "setable": true,
       "icon": "/assets/battery_capability.svg"
+    },
+    "calibrated": {
+      "type": "enum",
+      "title": {
+        "en": "Calibrated"
+      },
+      "values": [
+        {
+          "id": "calibrated",
+          "title": {
+            "en": "Yes"
+          }
+        },
+        {
+          "id": "uncalibrated",
+          "title": {
+            "en": "No"
+          }
+        },
+        {
+          "id": "calibrating",
+          "title": {
+            "en": "Calibrating..."
+          }
+        }
+      ],
+      "uiComponent": "sensor",
+      "getable": true,
+      "setable": true,
+      "icon": "/assets/calibrated_capability.svg"
     },
     "connected": {
       "type": "enum",

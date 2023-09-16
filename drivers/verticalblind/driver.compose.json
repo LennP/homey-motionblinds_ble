@@ -10,7 +10,8 @@
     "battery",
     "connected",
     "rssi",
-    "favorite"
+    "favorite",
+    "calibrated"
   ],
   "platforms": [
     "local",
