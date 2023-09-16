@@ -4,35 +4,34 @@ import { MotionSpeedLevel, MotionConnectionType, MotionService, MotionCharacteri
 import MotionCommand from '../command'
 import MotionNotification from '../notification'
 import MotionCrypt from '../crypt'
-import { Advertisement } from 'homey/lib/BlePeripheral';
 
 class ConnectionQueue {
 
-  static lastCallerResolve: ((lastCallerConnected: boolean) => void) | undefined | null;
+  #lastCallerResolve: ((lastCallerConnected: boolean) => void) | undefined | null;
 
-  static async waitForConnection(device: GenericDevice) {
-    if (ConnectionQueue.lastCallerResolve === undefined) {
-      ConnectionQueue.lastCallerResolve = null
+  async waitForConnection(device: GenericDevice) {
+    if (this.#lastCallerResolve === undefined) {
+      this.#lastCallerResolve = null
       
       device.log("Connecting to motor...")
       const connected = await device._connect()
-      if (ConnectionQueue.lastCallerResolve) {
-        (ConnectionQueue.lastCallerResolve as (val: boolean) => void)(connected);
+      if (this.#lastCallerResolve) {
+        (this.#lastCallerResolve as (val: boolean) => void)(connected);
         return false
       } else {
-        ConnectionQueue.lastCallerResolve = undefined
+        this.#lastCallerResolve = undefined
         return connected
       }
       
     } else {
       device.log("Already connecting, waiting for connection...")
-      if (ConnectionQueue.lastCallerResolve)
-        ConnectionQueue.lastCallerResolve(false)
+      if (this.#lastCallerResolve)
+        this.#lastCallerResolve(false)
       return new Promise((resolve) => {
-        ConnectionQueue.lastCallerResolve = function(lastCallerConnected: boolean) {
-          resolve(lastCallerConnected)
-          if (lastCallerConnected)
-            ConnectionQueue.lastCallerResolve = undefined
+          this.#lastCallerResolve = function(lastCallerConnected: boolean) {
+            resolve(lastCallerConnected)
+            if (lastCallerConnected)
+              this.#lastCallerResolve = undefined
         }
       })
     }
@@ -49,6 +48,7 @@ class GenericDevice extends Homey.Device {
   #disconnectTimerID: NodeJS.Timeout | undefined
   #commandCharacteristic: BleCharacteristic | undefined
   #notificationCharacteristic: BleCharacteristic | undefined
+  #connectionQueue: ConnectionQueue = new ConnectionQueue()
 
   #lastIdleClickTime: number = 0
 
@@ -149,6 +149,7 @@ class GenericDevice extends Homey.Device {
 
     await this.handleLatestAdvertisement()
 
+    // Update the RSSI with interval
     this.#updateInterval = setInterval(async () => {
       await this.handleLatestAdvertisement()
     }, Setting.UPDATE_INTERVAL * 1000)
@@ -179,7 +180,7 @@ class GenericDevice extends Homey.Device {
 
   async connect() {
     if (!this.isConnected())
-      return await ConnectionQueue.waitForConnection(this)
+      return await this.#connectionQueue.waitForConnection(this)
     this.refreshDisconnectTimer(Setting.DISCONNECT_TIME)
     return true
   }
