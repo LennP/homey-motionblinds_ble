@@ -11,12 +11,20 @@ class GenericDriver extends Homey.Driver {
     this.log(`${this.constructor.name} has been initialized`);
   }
 
-  isMac(s: string): boolean {
+  /**
+   * Used to test whether or not some string of characters is a Motion MAC code.
+   * @param s the MAC code string
+   * @returns whether or not the string is a MAC code
+   */
+  isMACCode(s: string): boolean {
     let codeRegex = /^[0-9A-Fa-f]{4}$/;
     return codeRegex.test(s);
   }
 
-
+  /**
+   * onPair is called when a pair session is started.
+   * @param session the pair session
+   */
   onPair(session: PairSession) {
     this.log('Pair session started')
 
@@ -28,7 +36,7 @@ class GenericDriver extends Homey.Driver {
       const mac = macChars.join('');
       targetMAC = mac.toUpperCase();
 
-      return this.isMac(mac);
+      return this.isMACCode(mac);
     });
 
     session.setHandler('showView', async (view: any) => {
