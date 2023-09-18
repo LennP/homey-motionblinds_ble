@@ -5,7 +5,7 @@ class MotionCommand {
 
     /**
      * Used to create a move up command.
-     * @returns {Buffer} a buffer containg the bytes
+     * @returns {Buffer} a buffer containing the bytes
      */
     static up(): Buffer {
         const command: string = MotionCommandType.OPEN + MotionCrypt.getTime()
@@ -14,7 +14,7 @@ class MotionCommand {
 
     /**
      * Used to create a move down command.
-     * @returns {Buffer} a buffer containg the bytes
+     * @returns {Buffer} a buffer containing the bytes
      */
     static down(): Buffer {
         const command: string = MotionCommandType.CLOSE + MotionCrypt.getTime()
@@ -23,7 +23,7 @@ class MotionCommand {
 
     /**
      * Used to create a stop moving command.
-     * @returns {Buffer} a buffer containg the bytes
+     * @returns {Buffer} a buffer containing the bytes
      */
     static stop(): Buffer {
         const command: string = MotionCommandType.STOP + MotionCrypt.getTime()
@@ -32,7 +32,7 @@ class MotionCommand {
 
     /**
      * Used to create a move to favorite position command.
-     * @returns {Buffer} a buffer containg the bytes
+     * @returns {Buffer} a buffer containing the bytes
      */
     static favorite(): Buffer {
         const command: string = MotionCommandType.FAVORITE + MotionCrypt.getTime()
@@ -42,7 +42,7 @@ class MotionCommand {
     /**
      * Used to create a move to percentage command.
      * @param {number} percent the percentage to move to
-     * @returns {Buffer} a buffer containg the bytes
+     * @returns {Buffer} a buffer containing the bytes
      */
     static percentage(percent: number): Buffer {
         if (percent < 0 || percent > 100)
@@ -56,7 +56,7 @@ class MotionCommand {
     /**
      * Used to create a tilt to angle command.
      * @param {number} angle the angle to tilt to
-     * @returns {Buffer} a buffer containg the bytes
+     * @returns {Buffer} a buffer containing the bytes
      */
     static tilt(angle: number): Buffer {
         if (angle < 0 || angle > 180)
@@ -69,7 +69,7 @@ class MotionCommand {
 
     /**
      * Used to create a command that sets the key.
-     * @returns {Buffer} a buffer containg the bytes
+     * @returns {Buffer} a buffer containing the bytes
      */
     static setKey(): Buffer {
         const command: string = MotionCommandType.SET_KEY + MotionCrypt.getTime()
@@ -78,7 +78,7 @@ class MotionCommand {
 
     /**
      * Used to create a command that changes the speed of the motor.
-     * @returns {Buffer} a buffer containg the bytes
+     * @returns {Buffer} a buffer containing the bytes
      */
     static speed(speed: MotionSpeedLevel): Buffer {
         const speed_hex: string = speed.toString(16).padStart(2, '0')
@@ -88,7 +88,7 @@ class MotionCommand {
 
     /**
      * Used to create a command that queries the motor for information.
-     * @returns {Buffer} a buffer containg the bytes
+     * @returns {Buffer} a buffer containing the bytes
      */
     static statusQuery(): Buffer {
         const command: string = MotionCommandType.STATUS_QUERY + MotionCrypt.getTime()
