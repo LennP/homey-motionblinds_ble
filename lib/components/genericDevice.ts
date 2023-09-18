@@ -486,7 +486,7 @@ class GenericDevice extends Homey.Device {
     newSettings: { [key: string]: boolean | string | number | undefined | null };
     changedKeys: string[];
   }): Promise<string | void> {
-    this.log(`${this.constructor.name} (${this.#peripheralUUID}) settings where changed`);
+    this.log(`${this.constructor.name} (${this.#peripheralUUID})'s settings were changed`);
   }
 
   /**
