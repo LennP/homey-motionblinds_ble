@@ -95,6 +95,9 @@ class GenericDevice extends Homey.Device {
   #notificationCharacteristic: BleCharacteristic | undefined
   #connectionQueue: ConnectionQueue = new ConnectionQueue()
 
+  #lastPosition: number | undefined
+  #lastAngle: number | undefined
+
   #endPositionInfo: MotionPositionInfo | undefined
   #foundEndPositionsCallback: Function | undefined
 
@@ -164,7 +167,6 @@ class GenericDevice extends Homey.Device {
       position = 100 - Math.ceil(position * 100)
       const percentageCommand: Buffer = MotionCommand.percentage(position)
       await this.#commandCharacteristic?.write(percentageCommand)
-      this.log(position)
     })
 
     // Handle button clicks, strings: up, idle, down
@@ -389,8 +391,17 @@ class GenericDevice extends Homey.Device {
 
       if (decryptedNotificationString.startsWith(MotionNotificationType.PERCENT)) {
         
-        const position: number = 1 - decryptedNotificationBuffer[6] / 100
-        const angle = 1 - Math.round((decryptedNotificationBuffer[7] / 180) * 100) / 100
+        const new_position: number = 1 - decryptedNotificationBuffer[6] / 100
+        const new_angle = 1 - Math.round((decryptedNotificationBuffer[7] / 180) * 100) / 100
+        this.log(`Percentage: ${new_position}`)
+        this.log(`Angle: ${new_angle}`)
+        // Only update if position feedback and angle feedback are not equal to previous feedback 
+        if (new_position != this.#lastPosition || new_angle != this.#lastAngle) {
+          await this.setCapabilityValue(MotionCapability.POSITION_SLIDER, new_position)
+          await this.setCapabilityValue(MotionCapability.TILT_SLIDER, new_angle)
+          this.#lastPosition = new_position
+          this.#lastAngle = new_angle
+        }
 
         this.#endPositionInfo?.updateEndPositions(decryptedNotificationBuffer[4])
         if (this.#endPositionInfo && this.#endPositionInfo.up) {
@@ -399,19 +410,16 @@ class GenericDevice extends Homey.Device {
           this.setCapabilityValue(MotionCapability.CALIBRATED, MotionCalibrationType.CALIBRATED)
         }
 
-        this.log(`Percentage: ${position}`)
-        this.log(`Angle: ${angle}`)
-        await this.setCapabilityValue(MotionCapability.POSITION_SLIDER, position)
-        await this.setCapabilityValue(MotionCapability.TILT_SLIDER, angle)
-
       } else if (decryptedNotificationString.startsWith(MotionNotificationType.STATUS)) {
 
-        const position: number = 1 - decryptedNotificationBuffer[6] / 100
-        const angle = 1 - Math.round((decryptedNotificationBuffer[7] / 180) * 100) / 100
+        const new_position: number = 1 - decryptedNotificationBuffer[6] / 100
+        const new_angle = 1 - Math.round((decryptedNotificationBuffer[7] / 180) * 100) / 100
         if (this.#lastPressedCapability != MotionCapability.POSITION_SLIDER && this.#lastPressedCapability != MotionCapability.TILT_SLIDER) {
-          await this.setCapabilityValue(MotionCapability.POSITION_SLIDER, position)
-          await this.setCapabilityValue(MotionCapability.TILT_SLIDER, angle)
+          await this.setCapabilityValue(MotionCapability.POSITION_SLIDER, new_position)
+          await this.setCapabilityValue(MotionCapability.TILT_SLIDER, new_angle)
         }
+        this.#lastPosition = new_position
+        this.#lastAngle = new_angle
 
         const speedLevel = decryptedNotificationBuffer[12]
         if (this.#lastPressedCapability != MotionCapability.SPEED_PICKER) {
@@ -466,6 +474,8 @@ class GenericDevice extends Homey.Device {
     await this.setCapabilityValue(MotionCapability.SPEED_PICKER, null)
     await this.#commandCharacteristic?.service.peripheral.disconnect()
     this.#lastPressedCapability = null
+    this.#lastPosition = undefined
+    this.#lastAngle = undefined
     this.#connectionQueue.cancel()
   }
 
