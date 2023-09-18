@@ -32,10 +32,8 @@ class GenericDriver extends Homey.Driver {
     var targetAdvertisements: Array<BleAdvertisement> = []
 
     session.setHandler("pincode", async (macChars: Array<string>) => {
-
       const mac = macChars.join('');
       targetMAC = mac.toUpperCase();
-
       return this.isMACCode(mac);
     });
 

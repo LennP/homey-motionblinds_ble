@@ -17,6 +17,10 @@ class MotionPositionInfo {
     this.favorite = Boolean(favoriteBytes & 0x8000)
   }
 
+  /**
+   * Updates the end positions.
+   * @param {number} endPositionByte the byte containing information about end positions.
+   */
   updateEndPositions(endPositionByte: number): void {
     this.up = Boolean(endPositionByte & 0x08)
     this.down = Boolean(endPositionByte & 0x04)
@@ -27,6 +31,11 @@ class ConnectionQueue {
 
   #lastCallerResolve: ((lastCallerConnected: boolean) => void) | undefined | null;
 
+  /**
+   * Waits for a connection, only returns true to the last caller if the connection is successful.
+   * @param {MotionDevice} device the device used to make the connection
+   * @returns {boolean} whether or not the motor is ready for a command
+   */
   async waitForConnection(device: GenericDevice): Promise<boolean> {
     if (this.#lastCallerResolve === undefined) {
       this.#lastCallerResolve = null
@@ -65,7 +74,10 @@ class ConnectionQueue {
 
   }
 
-  cancel() {
+  /**
+   * Cancels connecting to the motor.
+   */
+  cancel(): void {
     if (this.#lastCallerResolve)
       this.#lastCallerResolve(false)
     this.#lastCallerResolve = undefined
@@ -273,7 +285,7 @@ class GenericDevice extends Homey.Device {
 
   /**
    * Handles an advertisement, updates the RSSI value.
-   * @param advertisement the advertisement to handle
+   * @param {BleAdvertisement} advertisement the advertisement to handle
    */
   async handleLatestAdvertisement(advertisement: BleAdvertisement | null = null): Promise<void> {
     try {
@@ -286,7 +298,7 @@ class GenericDevice extends Homey.Device {
 
   /**
    * Used to see if the motor is connected to.
-   * @returns whether the motor is connected
+   * @returns {boolean} whether the motor is connected
    */
   isConnected(): boolean {
     return this.#commandCharacteristic != undefined && this.#commandCharacteristic.service.peripheral.isConnected
@@ -294,7 +306,7 @@ class GenericDevice extends Homey.Device {
 
   /**
    * Connects to the motor.
-   * @returns whether or not the motor is ready for a command
+   * @returns {boolean} whether or not the motor is ready for a command
    */
   async connect(): Promise<boolean> {
     if (!this.isConnected())
@@ -307,18 +319,6 @@ class GenericDevice extends Homey.Device {
    * Establishes a connection to the motor.
    */
   async establishConnection(): Promise<void> {
-    const timeoutError = async (func: Promise<any>, timeout: number, message: string) => {
-      const x = Object()
-      const res = await Promise.any([func, new Promise(
-        (resolve, reject) => setTimeout(() => {
-          resolve(x)
-        }, timeout * 1000)
-      )])
-      if (res == x)
-        throw new Error(message)
-      return res
-    }
-
     try {
       await this.setCapabilityValue(MotionCapability.CONNECTED_SENSOR, MotionConnectionType.CONNECTING)
       this.log(`Finding device ${this.#peripheralUUID}...`)
@@ -328,44 +328,19 @@ class GenericDevice extends Homey.Device {
       this.log('Connecting to device...')
       const peripheral: BlePeripheral = await advertisement.connect()
       this.log('Getting service...')
-      this.log('Connected: ' + peripheral.isConnected)
-
-      // await new Promise(r => setTimeout(_ => r(true), 1000))
-      // await new Promise(resolve => {
-      //   const interval = setInterval(async () => {
-      //     if (!peripheral.isConnected) {
-      //       this.log("Device disconnected")
-      //       clearInterval(interval)
-      //       resolve(true)
-      //     }
-      //     const services = await peripheral.discoverServices()
-      //     const chars = await services.map(async (x) => await x.discoverCharacteristics()).reduce(async (x, y) => (await x).concat(await y))
-      //     const s = services.map(s => s.uuid)
-      //     const c = chars.map(c => c.uuid)
-      //     const inServices = s.includes(MotionService.CONTROL)
-      //     const inChars = c.includes(MotionCharacteristic.COMMAND) && c.includes(MotionCharacteristic.NOTIFICATION)
-      //     this.log(s)
-      //     this.log(c)
-      //     if (inServices && inChars) {
-      //       this.log("Found all services and characteristics")
-      //       clearInterval(interval)
-      //       resolve(true)
-      //     }
-      //   }, 100)
-      // })
       // this.log(await peripheral.discoverAllServicesAndCharacteristics())
-      const service: BleService = await timeoutError(peripheral.getService(MotionService.CONTROL), 2, "Timeout service")
+      const service: BleService = await peripheral.getService(MotionService.CONTROL)
       this.log('Getting characteristic...')
-      this.#commandCharacteristic = await timeoutError(service.getCharacteristic(MotionCharacteristic.COMMAND), 2, "Timeout char")
-      this.#notificationCharacteristic = await timeoutError(service.getCharacteristic(MotionCharacteristic.NOTIFICATION), 2, "Timeout char")
+      this.#commandCharacteristic = await service.getCharacteristic(MotionCharacteristic.COMMAND)
+      this.#notificationCharacteristic = await service.getCharacteristic(MotionCharacteristic.NOTIFICATION)
       this.log("Subscribing to notifications...")
       await this.setCapabilityValue(MotionCapability.CONNECTED_SENSOR, MotionConnectionType.CONNECTED)
       await this.#notificationCharacteristic?.subscribeToNotifications(((notification: Buffer) => this.notificationHandler(notification)).bind(this))
       this.log("Setting user key...")
       const userKeyCommand: Buffer = MotionCommand.setKey()
-      await this.#commandCharacteristic?.write(userKeyCommand)
+      await this.#commandCharacteristic.write(userKeyCommand)
       const statusQueryCommand: Buffer = MotionCommand.statusQuery()
-      await this.#commandCharacteristic?.write(statusQueryCommand)
+      await this.#commandCharacteristic.write(statusQueryCommand)
       this.refreshDisconnectTimer(Setting.DISCONNECT_TIME)
       this.log("Ready to send command")
 
@@ -377,14 +352,14 @@ class GenericDevice extends Homey.Device {
 
   /**
    * Handles incoming BLE notifications from the client.
-   * @param notificationBuffer a Buffer containing the bytes of information
+   * @param {Buffer} notificationBuffer a Buffer containing the bytes of information
    */
   async notificationHandler(notificationBuffer: Buffer): Promise<void> {
     if (notificationBuffer.length % 16 == 0) {
       this.log("Received encrypted notification.")
-      const decryptedNotificationString: string = MotionNotification._decode_decrypt(notificationBuffer)
+      const decryptedNotificationString: string = MotionNotification.decryptDecode(notificationBuffer)
       this.log(decryptedNotificationString)
-      const decryptedNotificationBuffer: Buffer = MotionNotification._decrypt(notificationBuffer)
+      const decryptedNotificationBuffer: Buffer = MotionNotification.decrypt(notificationBuffer)
       if (decryptedNotificationString.startsWith(MotionNotificationType.PERCENT)) {
         const position: number = 1 - decryptedNotificationBuffer[6] / 100
         const angle = 1 - Math.round((decryptedNotificationBuffer[7] / 180) * 100) / 100
@@ -427,8 +402,8 @@ class GenericDevice extends Homey.Device {
 
   /**
    * Refreshes the time after which the motor is disconnected.
-   * @param time the time in seconds after which to disconnect
-   * @param force whether or not to force a refresh of the disconnect timer
+   * @param {number} time the time in seconds after which to disconnect
+   * @param {boolean} force whether or not to force a refresh of the disconnect timer
    */
   refreshDisconnectTimer(time: number, force: boolean = false): void {
     // Check if disconnect time is not smaller than existing disconnect time
