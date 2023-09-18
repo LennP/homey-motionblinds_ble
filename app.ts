@@ -1,7 +1,6 @@
 import Homey from 'homey';
 
 import MotionCrypt from './lib/crypt'
-import MotionTime from './lib/time'
 
 class MotionBlindsBLE extends Homey.App {
 
@@ -12,8 +11,8 @@ class MotionBlindsBLE extends Homey.App {
     this.log(`${this.constructor.name} has been initialized`);
 
     // Adjusts the time for the time zone
-    const currentTimeZone = this.homey.clock.getTimezone()
-    MotionTime.setCurrentTimeZone(currentTimeZone)
+    const timezone = this.homey.clock.getTimezone()
+    MotionCrypt.setTimezone(timezone)
 
     // Sets the encryption key
     MotionCrypt.setEncryptionKey(Homey.env.ENCRYPTION_KEY)

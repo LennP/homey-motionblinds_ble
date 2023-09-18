@@ -307,6 +307,18 @@ class GenericDevice extends Homey.Device {
    * Establishes a connection to the motor.
    */
   async establishConnection(): Promise<void> {
+    const timeoutError = async (func: Promise<any>, timeout: number, message: string) => {
+      const x = Object()
+      const res = await Promise.any([func, new Promise(
+        (resolve, reject) => setTimeout(() => {
+          resolve(x)
+        }, timeout * 1000)
+      )])
+      if (res == x)
+        throw new Error(message)
+      return res
+    }
+
     try {
       await this.setCapabilityValue(MotionCapability.CONNECTED_SENSOR, MotionConnectionType.CONNECTING)
       this.log(`Finding device ${this.#peripheralUUID}...`)
@@ -316,19 +328,44 @@ class GenericDevice extends Homey.Device {
       this.log('Connecting to device...')
       const peripheral: BlePeripheral = await advertisement.connect()
       this.log('Getting service...')
+      this.log('Connected: ' + peripheral.isConnected)
+
+      // await new Promise(r => setTimeout(_ => r(true), 1000))
+      // await new Promise(resolve => {
+      //   const interval = setInterval(async () => {
+      //     if (!peripheral.isConnected) {
+      //       this.log("Device disconnected")
+      //       clearInterval(interval)
+      //       resolve(true)
+      //     }
+      //     const services = await peripheral.discoverServices()
+      //     const chars = await services.map(async (x) => await x.discoverCharacteristics()).reduce(async (x, y) => (await x).concat(await y))
+      //     const s = services.map(s => s.uuid)
+      //     const c = chars.map(c => c.uuid)
+      //     const inServices = s.includes(MotionService.CONTROL)
+      //     const inChars = c.includes(MotionCharacteristic.COMMAND) && c.includes(MotionCharacteristic.NOTIFICATION)
+      //     this.log(s)
+      //     this.log(c)
+      //     if (inServices && inChars) {
+      //       this.log("Found all services and characteristics")
+      //       clearInterval(interval)
+      //       resolve(true)
+      //     }
+      //   }, 100)
+      // })
       // this.log(await peripheral.discoverAllServicesAndCharacteristics())
-      const service: BleService = await peripheral.getService(MotionService.CONTROL)
+      const service: BleService = await timeoutError(peripheral.getService(MotionService.CONTROL), 2, "Timeout service")
       this.log('Getting characteristic...')
-      this.#commandCharacteristic = await service.getCharacteristic(MotionCharacteristic.COMMAND)
-      this.#notificationCharacteristic = await service.getCharacteristic(MotionCharacteristic.NOTIFICATION)
+      this.#commandCharacteristic = await timeoutError(service.getCharacteristic(MotionCharacteristic.COMMAND), 2, "Timeout char")
+      this.#notificationCharacteristic = await timeoutError(service.getCharacteristic(MotionCharacteristic.NOTIFICATION), 2, "Timeout char")
       this.log("Subscribing to notifications...")
       await this.setCapabilityValue(MotionCapability.CONNECTED_SENSOR, MotionConnectionType.CONNECTED)
       await this.#notificationCharacteristic?.subscribeToNotifications(((notification: Buffer) => this.notificationHandler(notification)).bind(this))
       this.log("Setting user key...")
       const userKeyCommand: Buffer = MotionCommand.setKey()
-      await this.#commandCharacteristic.write(userKeyCommand)
+      await this.#commandCharacteristic?.write(userKeyCommand)
       const statusQueryCommand: Buffer = MotionCommand.statusQuery()
-      await this.#commandCharacteristic.write(statusQueryCommand)
+      await this.#commandCharacteristic?.write(statusQueryCommand)
       this.refreshDisconnectTimer(Setting.DISCONNECT_TIME)
       this.log("Ready to send command")
 
