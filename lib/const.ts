@@ -77,7 +77,7 @@ enum MotionCommandType {
 
 enum MotionNotificationType {
     PERCENT =       "07040402",
-    STATUS =   "12040f02"
+    STATUS =        "12040f02"
 }
 
 export {MotionCapability, MotionSpeedLevel, MotionCalibrationType, MotionConnectionType, MotionBlindType, MotionService, MotionCharacteristic, MotionCommandType, MotionNotificationType, Setting as Settings}

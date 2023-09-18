@@ -14,7 +14,7 @@ class MotionPositionInfo {
   constructor(endPositionByte: number, favoriteBytes: number) {
     this.up = Boolean(endPositionByte & 0x08)
     this.down = Boolean(endPositionByte & 0x04)
-    this.favorite = Boolean((favoriteBytes & 0xFF00) != 0x00 || (favoriteBytes & 0x00FF))
+    this.favorite = Boolean(favoriteBytes & 0x8000)
   }
 
   updateEndPositions(endPositionByte: number): void {
@@ -33,7 +33,7 @@ class ConnectionQueue {
       
       device.log("Connecting to motor...")
       try {
-        await device.establish_connection()
+        await device.establishConnection()
 
         if (this.#lastCallerResolve) {
           (this.#lastCallerResolve as (val: boolean) => void)(true);
@@ -44,9 +44,8 @@ class ConnectionQueue {
         }
       } catch (e) {
 
-        if (this.#lastCallerResolve) {
+        if (this.#lastCallerResolve)
           (this.#lastCallerResolve as (val: boolean) => void)(false);
-        }
         this.#lastCallerResolve = undefined
         throw e
       }
@@ -66,12 +65,17 @@ class ConnectionQueue {
 
   }
 
+  cancel() {
+    if (this.#lastCallerResolve)
+      this.#lastCallerResolve(false)
+    this.#lastCallerResolve = undefined
+  }
+
 }
 
 class GenericDevice extends Homey.Device {
 
   #peripheralUUID: string = this.getData().uuid
-  #connecting: boolean = false
   #updateInterval: NodeJS.Timer | undefined
   #disconnectTimerID: NodeJS.Timeout | undefined
   #disconnectTime: number | undefined
@@ -115,7 +119,7 @@ class GenericDevice extends Homey.Device {
 
     // Handle slider value changes, value from 0.00 to 1.00
     this.registerCapabilityListener(MotionCapability.POSITION_SLIDER, async (position) => {
-      await this.connect()
+      if (!await this.connect()) return
       await this.handleEndPositions()
       
       position = 100 - Math.ceil(position * 100)
@@ -126,7 +130,7 @@ class GenericDevice extends Homey.Device {
 
     // Handle button clicks, strings: up, idle, down
     this.registerCapabilityListener(MotionCapability.BUTTONS, async (state) => {
-      await this.connect()
+      if (!await this.connect()) return
     
       let stateCommand: Buffer = Buffer.from('')
       switch(state) {
@@ -173,29 +177,28 @@ class GenericDevice extends Homey.Device {
     // Handle button pressed value changes
     this.registerCapabilityListener(MotionCapability.CONNECT, async (pressed: boolean) => {
       await this.setCapabilityValue(MotionCapability.CONNECT, false)
-      await this.connect()
+      if (!await this.connect()) return
     })
 
     // Handle button pressed value changes
     this.registerCapabilityListener(MotionCapability.FAVORITE, async (pressed: boolean) => {
       await this.setCapabilityValue(MotionCapability.FAVORITE, false)
-      await this.connect()
+      if (!await this.connect()) return
       await this.handleEndPositions()
+      await this.handleFavoritePosition()
       await this.#commandCharacteristic?.write(MotionCommand.favorite())
     })
 
     // Handle speed value changes
     this.registerCapabilityListener(MotionCapability.SPEED_PICKER, async (key: string) => {
-      await this.connect()
-      await this.handleEndPositions()
-      await this.handleFavoritePosition()
+      if (!await this.connect()) return
       const speed_level: MotionSpeedLevel = Number.parseInt(key)
       this.#commandCharacteristic?.write(MotionCommand.speed(speed_level))
     })
 
     // Handle tilt slider value changes, value from 0.00 to 1.00
     this.registerCapabilityListener(MotionCapability.TILT_SLIDER, async (angle: number) => {
-      await this.connect()
+      if (!await this.connect()) return
       await this.handleEndPositions()
       angle = 180 - Math.round(180 * angle)
       this.log(angle)
@@ -203,6 +206,7 @@ class GenericDevice extends Homey.Device {
       await this.#commandCharacteristic?.write(tiltCommand)
     })
 
+    // Update the RSSI
     await this.handleLatestAdvertisement()
 
     // Update the RSSI with interval
@@ -212,6 +216,9 @@ class GenericDevice extends Homey.Device {
 
   }
 
+  /**
+   * Function that waits for the end position information to become known.
+   */
   async waitForEndPositionInfo(): Promise<void> {
     if (!this.#endPositionInfo)
       await new Promise<void>(((resolve: Function) => {
@@ -222,7 +229,9 @@ class GenericDevice extends Homey.Device {
       }))
   }
 
-
+  /**
+   * Handles information about the favorite position, throws an error if not set.
+   */
   async handleFavoritePosition(): Promise<void> {
 
     await this.waitForEndPositionInfo()
@@ -232,62 +241,74 @@ class GenericDevice extends Homey.Device {
 
   }
 
+  /**
+   * Handles information about the end positions, throws an error if not set.
+   */
   async handleEndPositions(): Promise<void> {
 
     await this.waitForEndPositionInfo()
 
     if (this.constructor.name == "CurtainBlindDevice") {
+      // If no end positions are set for a curtain blind, then continue by sending a position command which will calibrate the blind
       if (!this.#endPositionInfo?.up) {
         this.log("Calibrating...")
         this.#calibrationType = MotionCalibrationType.CALIBRATING
         this.setCapabilityValue(MotionCapability.CALIBRATED, MotionCalibrationType.CALIBRATING)
         this.refreshDisconnectTimer(Setting.CALIBRATION_TIME)
-        // Continue with command
       }
     } else if (this.constructor.name == "VerticalBlindDevice") {
-      if (!this.#endPositionInfo?.up)
+      // If no end positions are set for a vertical blind, then throw an error
+      if (!this.#endPositionInfo?.up) {
         this.#calibrationType = MotionCalibrationType.UNCALIBRATED
         this.setCapabilityValue(MotionCapability.CALIBRATED, MotionCalibrationType.UNCALIBRATED)
         throw new Error(`${this.getName()} needs to be calibrated using the MotionBlinds BLE app before usage.`)
+      }
     } else {
+      // If no end positions are set, then throw an error
       if (!this.#endPositionInfo?.up)
         throw new Error(`${this.getName()}'s end positions need to be set before usage of this command.`)
     }
     
   }
 
-  async handleLatestAdvertisement(advertisement: BleAdvertisement | null = null): Promise<BleAdvertisement | null> {
+  /**
+   * Handles an advertisement, updates the RSSI value.
+   * @param advertisement the advertisement to handle
+   */
+  async handleLatestAdvertisement(advertisement: BleAdvertisement | null = null): Promise<void> {
     try {
       advertisement = advertisement ? advertisement : await this.homey.ble.find(this.#peripheralUUID, Setting.FIND_TIME)
       await this.setCapabilityValue(MotionCapability.RSSI, `${advertisement.rssi} dBm`)
     } catch (e) {
       await this.setCapabilityValue(MotionCapability.RSSI, `Not found`)
     }
-    return advertisement
   }
 
-  setIsConnecting(connecting: boolean): void {
-    this.#connecting = connecting
-  }
-
-  isConnecting(): boolean {
-    return this.#connecting
-  }
-
+  /**
+   * Used to see if the motor is connected to.
+   * @returns whether the motor is connected
+   */
   isConnected(): boolean {
     return this.#commandCharacteristic != undefined && this.#commandCharacteristic.service.peripheral.isConnected
   }
 
-  async connect(): Promise<void> {
+  /**
+   * Connects to the motor.
+   * @returns whether or not the motor is ready for a command
+   */
+  async connect(): Promise<boolean> {
     if (!this.isConnected())
-      await this.#connectionQueue.waitForConnection(this)
+      return await this.#connectionQueue.waitForConnection(this)
     this.refreshDisconnectTimer(Setting.DISCONNECT_TIME)
+    return true
   }
 
-  async establish_connection(): Promise<void> {
+  /**
+   * Establishes a connection to the motor.
+   */
+  async establishConnection(): Promise<void> {
     try {
       await this.setCapabilityValue(MotionCapability.CONNECTED_SENSOR, MotionConnectionType.CONNECTING)
-      this.setIsConnecting(true)
       this.log(`Finding device ${this.#peripheralUUID}...`)
       const advertisement: BleAdvertisement = await this.homey.ble.find(this.#peripheralUUID, Setting.FIND_TIME)
       await this.setCapabilityValue(MotionCapability.RSSI, `${advertisement.rssi} dBm`)
@@ -310,7 +331,6 @@ class GenericDevice extends Homey.Device {
       await this.#commandCharacteristic.write(statusQueryCommand)
       this.refreshDisconnectTimer(Setting.DISCONNECT_TIME)
       this.log("Ready to send command")
-      this.setIsConnecting(false)
 
     } catch (e) {
       await this.setCapabilityValue(MotionCapability.CONNECTED_SENSOR, MotionConnectionType.DISCONNECTED)
@@ -318,6 +338,10 @@ class GenericDevice extends Homey.Device {
     }
   }
 
+  /**
+   * Handles incoming BLE notifications from the client.
+   * @param notificationBuffer a Buffer containing the bytes of information
+   */
   async notificationHandler(notificationBuffer: Buffer): Promise<void> {
     if (notificationBuffer.length % 16 == 0) {
       this.log("Received encrypted notification.")
@@ -352,15 +376,23 @@ class GenericDevice extends Homey.Device {
         } catch (e) {
           this.log(`Invalid speed level: ${speedLevel}`)
         }
-        this.#endPositionInfo = new MotionPositionInfo(decryptedNotificationBuffer[4], (decryptedNotificationBuffer[6] << 8) | decryptedNotificationBuffer[7])
-        if (this.#foundEndPositionsCallback)
+        this.#endPositionInfo = new MotionPositionInfo(decryptedNotificationBuffer[4], (decryptedNotificationBuffer[14] << 8) | decryptedNotificationBuffer[15])
+        if (this.#foundEndPositionsCallback) {
           this.#foundEndPositionsCallback()
+        } else {
+          await this.setCapabilityValue(MotionCapability.CALIBRATED, this.#endPositionInfo.up ? MotionCalibrationType.CALIBRATED: MotionCalibrationType.UNCALIBRATED)
+        }
       }
     } else {
       this.error(`Unknown message ${notificationBuffer}`)
     }
   }
 
+  /**
+   * Refreshes the time after which the motor is disconnected.
+   * @param time the time in seconds after which to disconnect
+   * @param force whether or not to force a refresh of the disconnect timer
+   */
   refreshDisconnectTimer(time: number, force: boolean = false): void {
     // Check if disconnect time is not smaller than existing disconnect time
     const newDisconnectTime = Date.now() + time * 1000
@@ -377,12 +409,15 @@ class GenericDevice extends Homey.Device {
     }).bind(this), time * 1000)
   }
 
+  /**
+   * Disconnects from the motor.
+   */
   async disconnect() {
-    this.log(`Disconnecting after ${Setting.DISCONNECT_TIME}s`)
     await this.setCapabilityValue(MotionCapability.CONNECTED_SENSOR, MotionConnectionType.DISCONNECTED)
     await this.setCapabilityValue(MotionCapability.CALIBRATED, null)
     this.#calibrationType = undefined
     await this.#commandCharacteristic?.service.peripheral.disconnect()
+    this.#connectionQueue.cancel()
   }
 
   /**
