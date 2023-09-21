@@ -12,8 +12,9 @@
     "en": "MotionBlinds BLE"
   },
   "description": {
-    "en": "MotionBlinds BLE"
+    "en": "Adds support for MotionBlinds BLE motors."
   },
+  "brandColor": "#3130FA",
   "category": [
     "climate"
   ],
