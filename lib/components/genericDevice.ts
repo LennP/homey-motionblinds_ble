@@ -29,7 +29,9 @@ class MotionPositionInfo {
 
 class ConnectionQueue {
 
-  #lastCallerResolve: ((lastCallerConnected: boolean) => void) | undefined | null;
+  #lastCallerResolve: ((isConnected: boolean, isLastCaller: boolean) => void) | undefined | null;
+  #cancelConnecting: (() => void) | undefined;
+  #abortConnecting: AbortController | undefined
 
   /**
    * Waits for a connection, only returns true to the last caller if the connection is successful.
@@ -37,37 +39,45 @@ class ConnectionQueue {
    * @returns {boolean} whether or not the motor is ready for a command
    */
   async waitForConnection(device: GenericDevice): Promise<boolean> {
+    // If not connecting yet
     if (this.#lastCallerResolve === undefined) {
       this.#lastCallerResolve = null
-      
-      device.log("Connecting to motor...")
-      try {
-        await device.establishConnection()
 
-        if (this.#lastCallerResolve) {
-          (this.#lastCallerResolve as (val: boolean) => void)(true);
-          return false
+      try {
+        this.#abortConnecting = new AbortController()
+        const connected = await device.establishConnection(this.#abortConnecting.signal)
+
+        if (!connected) device.log("Cancelled connecting")
+
+        // If this is the last caller, then reset and return whether or not cancelled
+        if (!this.#lastCallerResolve) {
+          this.reset()
+          return connected ? true : false
         } else {
-          this.#lastCallerResolve = undefined
-          return true
+          (this.#lastCallerResolve as (isConnected: boolean, isLastCaller: boolean) => void)(connected ? true : false, true);
+          return false
         }
       } catch (e) {
+        // Not connected due to error
 
-        if (this.#lastCallerResolve)
-          (this.#lastCallerResolve as (val: boolean) => void)(false);
-        this.#lastCallerResolve = undefined
+        if (this.#lastCallerResolve) {
+          (this.#lastCallerResolve as (isConnected: boolean, isLastCaller: boolean) => void)(false, true);
+        } else {
+          this.reset()
+        }
         throw e
       }
       
     } else {
+      // If connecting already, resolve the laster caller to false and wait
       device.log("Already connecting, waiting for connection...")
       if (this.#lastCallerResolve)
-        this.#lastCallerResolve(false)
+        (this.#lastCallerResolve as (isConnected: boolean, isLastCaller: boolean) => void)(false, false);
       return new Promise((resolve) => {
-          this.#lastCallerResolve = function(lastCallerConnected: boolean) {
-            resolve(lastCallerConnected)
-            if (lastCallerConnected)
-              this.#lastCallerResolve = undefined
+          this.#lastCallerResolve = function(isConnected: boolean, isLastCaller: boolean) {
+            resolve(isConnected && isLastCaller)
+            if (isLastCaller)
+              this.reset()
         }
       })
     }
@@ -75,18 +85,30 @@ class ConnectionQueue {
   }
 
   /**
+   * Resets the connection queue.
+   */
+  reset(): void {
+    this.#lastCallerResolve = undefined
+    this.#abortConnecting = undefined
+  }
+
+  /**
    * Cancels connecting to the motor.
    */
-  cancel(): void {
+  cancel(device: GenericDevice): void {
+    if (this.#abortConnecting) {
+      device.log('Cancelling connecting...')
+      this.#abortConnecting.abort()
+    }
     if (this.#lastCallerResolve)
-      this.#lastCallerResolve(false)
-    this.#lastCallerResolve = undefined
+      this.#lastCallerResolve(false, true)
   }
 
 }
 
 class GenericDevice extends Homey.Device {
 
+  #peripheral: BlePeripheral | undefined
   #peripheralUUID: string = this.getData().uuid
   #updateInterval: NodeJS.Timer | undefined
   #disconnectTimerID: NodeJS.Timeout | undefined
@@ -344,32 +366,47 @@ class GenericDevice extends Homey.Device {
 
   /**
    * Establishes a connection to the motor.
+   * @returns {boolean} whether the motor is connected
    */
-  async establishConnection(): Promise<void> {
+  async establishConnection(abortSignal: AbortSignal): Promise<boolean> {
     try {
       await this.setCapabilityValue(MotionCapability.CONNECTED_SENSOR, MotionConnectionType.CONNECTING)
       this.log(`Finding device ${this.#peripheralUUID}...`)
+      if (abortSignal.aborted) return false
       const advertisement: BleAdvertisement = await this.homey.ble.find(this.#peripheralUUID, Setting.FIND_TIME)
       await this.setCapabilityValue(MotionCapability.RSSI, `${advertisement.rssi} dBm`)
 
       this.log('Connecting to device...')
-      const peripheral: BlePeripheral = await advertisement.connect()
-      this.log('Getting service...')
+      if (abortSignal.aborted) return false
+      this.#peripheral = await advertisement.connect()
+      this.#peripheral.once('disconnect', () => {
+        this.log('The device has disconnected!')
+        this.disconnect()
+      });
       // this.log(await peripheral.discoverAllServicesAndCharacteristics())
-      const service: BleService = await peripheral.getService(MotionService.CONTROL)
+      if (abortSignal.aborted) return false
+      this.log('Getting service...')
+      const service: BleService = await this.#peripheral.getService(MotionService.CONTROL)
+      if (abortSignal.aborted) return false
       this.log('Getting characteristic...')
       this.#commandCharacteristic = await service.getCharacteristic(MotionCharacteristic.COMMAND)
+      if (abortSignal.aborted) return false
       this.#notificationCharacteristic = await service.getCharacteristic(MotionCharacteristic.NOTIFICATION)
-      this.log("Subscribing to notifications...")
+      if (abortSignal.aborted) return false
       await this.setCapabilityValue(MotionCapability.CONNECTED_SENSOR, MotionConnectionType.CONNECTED)
+      if (abortSignal.aborted) return false
+      this.log("Subscribing to notifications...")
       await this.#notificationCharacteristic?.subscribeToNotifications(((notification: Buffer) => this.notificationHandler(notification)).bind(this))
+      if (abortSignal.aborted) return false
       this.log("Setting user key...")
       const userKeyCommand: Buffer = MotionCommand.setKey()
       await this.#commandCharacteristic.write(userKeyCommand)
       const statusQueryCommand: Buffer = MotionCommand.statusQuery()
+      if (abortSignal.aborted) return false
       await this.#commandCharacteristic.write(statusQueryCommand)
       this.refreshDisconnectTimer(Setting.DISCONNECT_TIME)
       this.log("Ready to send command")
+      return true
 
     } catch (e) {
       await this.setCapabilityValue(MotionCapability.CONNECTED_SENSOR, MotionConnectionType.DISCONNECTED)
@@ -467,16 +504,21 @@ class GenericDevice extends Homey.Device {
    * Disconnects from the motor.
    */
   async disconnect() {
+    this.#connectionQueue.cancel(this)
+
     await this.setCapabilityValue(MotionCapability.CONNECTED_SENSOR, MotionConnectionType.DISCONNECTED)
     await this.setCapabilityValue(MotionCapability.POSITION_SLIDER, null)
     await this.setCapabilityValue(MotionCapability.TILT_SLIDER, null)
     await this.setCapabilityValue(MotionCapability.CALIBRATED, null)
     await this.setCapabilityValue(MotionCapability.SPEED_PICKER, null)
-    await this.#commandCharacteristic?.service.peripheral.disconnect()
+
+    if (this.#commandCharacteristic?.service.peripheral.isConnected)
+      await this.#commandCharacteristic?.service.peripheral.disconnect()
+    this.#commandCharacteristic = undefined
     this.#lastPressedCapability = null
     this.#lastPosition = undefined
     this.#lastAngle = undefined
-    this.#connectionQueue.cancel()
+    
   }
 
   /**
