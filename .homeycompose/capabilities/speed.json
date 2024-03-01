@@ -1,7 +1,7 @@
 {
   "type": "enum",
   "title": { "en": "Motor speed" },
-  "values" : [
+  "values": [
     {
       "id": "1",
       "title": {
@@ -20,7 +20,7 @@
         "en": "High"
       }
     }
-    ],
+  ],
   "uiComponent": "picker",
   "getable": true,
   "setable": true,

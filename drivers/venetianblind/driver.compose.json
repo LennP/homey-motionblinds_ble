@@ -15,13 +15,8 @@
     "connect",
     "favorite"
   ],
-  "platforms": [
-    "local",
-    "cloud"
-  ],
-  "connectivity": [
-    "ble"
-  ],
+  "platforms": ["local", "cloud"],
+  "connectivity": ["ble"],
   "images": {
     "small": "{{driverAssetsPath}}/images/small.png",
     "large": "{{driverAssetsPath}}/images/large.png",

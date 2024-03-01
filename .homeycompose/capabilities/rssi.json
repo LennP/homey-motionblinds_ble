@@ -1,8 +1,8 @@
 {
-    "type": "string",
-    "title": { "en": "RSSI" },
-    "uiComponent": "sensor",
-    "getable": true,
-    "setable": true,
-    "icon": "/assets/rssi_capability.svg"
+  "type": "string",
+  "title": { "en": "RSSI" },
+  "uiComponent": "sensor",
+  "getable": true,
+  "setable": true,
+  "icon": "/assets/rssi_capability.svg"
 }

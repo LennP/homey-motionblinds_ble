@@ -1,8 +1,8 @@
 {
-    "type": "string",
-    "title": { "en": "Battery" },
-    "uiComponent": "sensor",
-    "getable": true,
-    "setable": true,
-    "icon": "/assets/battery_capability.svg"
+  "type": "string",
+  "title": { "en": "Battery" },
+  "uiComponent": "sensor",
+  "getable": true,
+  "setable": true,
+  "icon": "/assets/battery_capability.svg"
 }

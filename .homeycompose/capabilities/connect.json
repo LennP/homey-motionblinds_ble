@@ -1,8 +1,8 @@
 {
-    "type": "boolean",
-    "title": { "en": "Connect" },
-    "uiComponent": "button",
-    "getable": true,
-    "setable": true,
-    "icon": "/assets/connect_capability.svg"
-  }
+  "type": "boolean",
+  "title": { "en": "Connect" },
+  "uiComponent": "button",
+  "getable": true,
+  "setable": true,
+  "icon": "/assets/connect_capability.svg"
+}

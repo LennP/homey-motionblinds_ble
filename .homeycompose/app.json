@@ -3,10 +3,7 @@
   "version": "1.0.0",
   "compatibility": ">=5.0.0",
   "sdk": 3,
-  "platforms": [
-    "local",
-    "cloud"
-  ],
+  "platforms": ["local", "cloud"],
   "name": {
     "en": "MotionBlinds BLE"
   },
@@ -14,13 +11,8 @@
     "en": "Adds support for MotionBlinds BLE motors."
   },
   "brandColor": "#3130FA",
-  "category": [
-    "climate"
-  ],
-  "permissions": [
-    "homey:wireless:ble",
-    "homey:manager:ledring"
-  ],
+  "category": ["climate"],
+  "permissions": ["homey:wireless:ble", "homey:manager:ledring"],
   "images": {
     "small": "/assets/images/small.png",
     "large": "/assets/images/large.png",

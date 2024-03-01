@@ -1,24 +1,25 @@
 {
   "type": "enum",
   "title": { "en": "Calibrated" },
-  "values" : [{
-    "id": "calibrated",
-    "title": {
-      "en": "Yes"
+  "values": [
+    {
+      "id": "calibrated",
+      "title": {
+        "en": "Yes"
+      }
+    },
+    {
+      "id": "uncalibrated",
+      "title": {
+        "en": "No"
+      }
+    },
+    {
+      "id": "calibrating",
+      "title": {
+        "en": "Calibrating..."
+      }
     }
-  },
-  {
-    "id": "uncalibrated",
-    "title": {
-      "en": "No"
-    }
-  },
-  {
-    "id": "calibrating",
-    "title": {
-      "en": "Calibrating..."
-    }
-  }
   ],
   "uiComponent": "sensor",
   "getable": true,

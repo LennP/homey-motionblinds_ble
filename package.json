@@ -4,13 +4,20 @@
   "main": "app.ts",
   "scripts": {
     "build": "tsc",
-    "test": "jest"
+    "test": "jest",
+    "lint": "eslint . --ignore-path .eslintignore --ext .js,.ts",
+    "format": "prettier --ignore-path .gitignore --write \"**/*.+(js|ts|json)\""
   },
   "devDependencies": {
     "@tsconfig/node16": "^16.1.0",
     "@types/homey": "npm:homey-apps-sdk-v3-types@^0.3.4",
     "@types/jest": "^29.5.3",
     "@types/node": "^20.4.5",
+    "@typescript-eslint/eslint-plugin": "^7.1.0",
+    "@typescript-eslint/parser": "^7.1.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.2.5",
     "typescript": "^5.1.6"
   },
   "dependencies": {
