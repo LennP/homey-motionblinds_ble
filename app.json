@@ -34,7 +34,7 @@
   "drivers": [
     {
       "name": {
-        "en": "Curtain Blind"
+        "en": "Curtain blind"
       },
       "class": "blinds",
       "capabilities": [
@@ -94,7 +94,7 @@
     },
     {
       "name": {
-        "en": "Double Roller Blind"
+        "en": "Double roller blind"
       },
       "class": "blinds",
       "capabilities": [
@@ -155,7 +155,7 @@
     },
     {
       "name": {
-        "en": "Honeycomb Blind"
+        "en": "Honeycomb blind"
       },
       "class": "blinds",
       "capabilities": [
@@ -215,7 +215,7 @@
     },
     {
       "name": {
-        "en": "Roller Blind"
+        "en": "Roller blind"
       },
       "class": "blinds",
       "capabilities": [
@@ -275,7 +275,7 @@
     },
     {
       "name": {
-        "en": "Roman Blind"
+        "en": "Roman blind"
       },
       "class": "blinds",
       "capabilities": [
@@ -335,7 +335,7 @@
     },
     {
       "name": {
-        "en": "Venetian Blind"
+        "en": "Venetian blind"
       },
       "class": "blinds",
       "capabilities": [
@@ -396,7 +396,7 @@
     },
     {
       "name": {
-        "en": "Venetian (tilt-only) Blind"
+        "en": "Venetian blind (tilt-only)"
       },
       "class": "blinds",
       "capabilities": [
@@ -457,7 +457,7 @@
     },
     {
       "name": {
-        "en": "Vertical Blind"
+        "en": "Vertical blind"
       },
       "class": "blinds",
       "capabilities": [
