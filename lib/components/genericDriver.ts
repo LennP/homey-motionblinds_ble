@@ -62,7 +62,7 @@ class GenericDriver extends Homey.Driver {
     session.setHandler('list_devices', async () => {
       return targetAdvertisements.map(ad => {
         return {
-          name: `MotionBlind ${targetMAC}`,
+          name: `Motionblind ${targetMAC}`,
           data: {
             mac: ad.address,
             uuid: ad.uuid,

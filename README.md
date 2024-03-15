@@ -1,3 +1,3 @@
-# Homey MotionBlinds BLE
+# Homey Motionblinds BLE
 
-Homey MotionBlinds BLE
+Homey Motionblinds BLE

@@ -410,7 +410,7 @@ class GenericDevice extends Homey.Device {
           MotionCalibrationType.UNCALIBRATED,
         )
         throw new Error(
-          `${this.getName()} needs to be calibrated using the MotionBlinds BLE app before usage.`,
+          `${this.getName()} needs to be calibrated using the Motionblinds BLE app before usage.`,
         )
       }
     } else {

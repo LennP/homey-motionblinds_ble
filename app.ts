@@ -2,7 +2,7 @@ import Homey from 'homey'
 
 import MotionCrypt from './lib/crypt'
 
-class MotionBlindsBLE extends Homey.App {
+class MotionblindsBLE extends Homey.App {
   /**
    * onInit is called when the app is initialized.
    */
@@ -19,4 +19,4 @@ class MotionBlindsBLE extends Homey.App {
   }
 }
 
-module.exports = MotionBlindsBLE
+module.exports = MotionblindsBLE
