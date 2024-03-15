@@ -9,10 +9,10 @@
     "cloud"
   ],
   "name": {
-    "en": "MotionBlinds BLE"
+    "en": "Motionblinds BLE"
   },
   "description": {
-    "en": "Adds support for MotionBlinds BLE motors."
+    "en": "Adds support for Motionblinds BLE motors."
   },
   "brandColor": "#3130FA",
   "category": [
