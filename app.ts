@@ -15,7 +15,7 @@ class MotionBlindsBLE extends Homey.App {
 
     // Sets the encryption key
     MotionCrypt.setEncryptionKey(Homey.env.ENCRYPTION_KEY)
-    this.log(MotionCrypt.decrypt('244e1d963ebdc5453f43e896465b5bcf'))
+    
   }
 }
 
