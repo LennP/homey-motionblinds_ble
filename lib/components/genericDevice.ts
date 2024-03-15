@@ -105,10 +105,10 @@ class ConnectionQueue {
           ) => void
         )(false, false)
       return new Promise(resolve => {
-        this.#lastCallerResolve = function (
+        this.#lastCallerResolve = (
           isConnected: boolean,
           isLastCaller: boolean,
-        ) {
+        ) => {
           resolve(isConnected && isLastCaller)
           if (isLastCaller) this.reset()
         }
